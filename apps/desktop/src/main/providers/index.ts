@@ -73,11 +73,13 @@ const providers: Record<SearchProviderId, SearchProvider> = {
       // which would make `formats.length` throw deep in the search.
       const formats = Array.isArray(s.discogsFormats) ? s.discogsFormats : []
       const words = ignoreWordsOf(s.searchIgnoreWords)
+      const cleaned = cleanHints(hints, words, s.searchByAlbumFirst === true)
+      const fallbackAlbum = cleaned?.album ? undefined : cleanHints(hints, words, true)?.album
       return discogs.search(
         cleanQuery(query, words),
         s.discogsToken,
         priority,
-        cleanHints(hints, words, s.searchByAlbumFirst === true),
+        fallbackAlbum ? { ...cleaned, fallbackAlbum } : cleaned,
         formats,
         // How many the panel will show, so the page is never smaller than the list it
         // has to fill. Defensive like formats above: a hand-edited settings.json must

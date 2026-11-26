@@ -149,6 +149,16 @@ export function namesArtist(result: SearchResult, artist: string): boolean {
   return actsOf(artist).some((act) => namesAct(result.title, act))
 }
 
+// Stricter than namesArtist, for a row found through Discogs' loose artist field: the
+// row's own credit (before " - ", without the "*" of a name variation or the "(2)" that
+// tells homonyms apart) must be one of the file's acts, not merely contain its words.
+// "Elastica" is inside "La Banda Elastica", which namesArtist accepts and this does not.
+export function creditsArtist(result: SearchResult, artist: string): boolean {
+  const credit = result.title.split(' - ')[0].replace(/\*|\s\(\d+\)/g, '')
+  const theirs = new Set(actsOf(credit).map(wordsOf))
+  return actsOf(artist).some((act) => theirs.has(wordsOf(act)))
+}
+
 // The free-text providers' shared loop (Bandcamp, Deezer, Beatport, and MusicBrainz'
 // free text): each candidate in turn, keeping the first whose rows name the file's artist.
 // Fuzzy search always answers something, so the first rung that returns anything was often

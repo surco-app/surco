@@ -11,7 +11,7 @@ import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
-import { buildSearchCandidates } from './searchQuery'
+import { buildSearchCandidates, creditsArtist } from './searchQuery'
 
 const BASE = 'https://api.discogs.com'
 
@@ -325,9 +325,8 @@ export async function search(
       // popular album has hundreds of editions and the one the file came from can sit
       // pages down, so the tagged year's editions are asked for first and lead, and a title
       // with nothing from that year leaves the bare one to be asked before the search ends.
-      const album = hints?.album?.trim() ?? ''
       const year = hints?.year?.trim()
-      if (artist && album) {
+      const searchAlbum = async (album: string): Promise<SearchResult[]> => {
         let withoutYear: SearchResult[] = []
         for (const albumTitle of new Set([album, bareAlbumTitle(album)])) {
           const byYear = year
@@ -338,7 +337,12 @@ export async function search(
           if (byAlbum.length && !year) return byAlbum
           if (!withoutYear.length) withoutYear = byAlbum
         }
-        if (withoutYear.length) return withoutYear
+        return withoutYear
+      }
+      const album = hints?.album?.trim() ?? ''
+      if (artist && album) {
+        const byAlbum = await searchAlbum(album)
+        if (byAlbum.length) return byAlbum
       }
       if (artist && title) {
         const structured = keep(await searchStructured(artist, title, token, opts, priority))
@@ -368,6 +372,16 @@ export async function search(
         if (byAct.length) return byAct
         const byActTrack = keep(await searchTracklist(act, track, token, opts, priority))
         if (byActTrack.length) return byActTrack
+      }
+      // With album-first off the tagged album still names the release the file came from:
+      // a misspelt title ("Blazer" filed as "Blazzer") misses every query above, and the
+      // bare title below then ends on other acts' homonyms. The artist field matches
+      // loosely ("Elastica" brought La Banda Elastica), so the answer stands only when a
+      // row credits the tagged act itself; otherwise the free text gets its turn.
+      const fallbackAlbum = hints?.fallbackAlbum?.trim() ?? ''
+      if (artist && fallbackAlbum) {
+        const byAlbum = await searchAlbum(fallbackAlbum)
+        if (byAlbum.some((r) => creditsArtist(r, artist))) return byAlbum
       }
       let results: SearchResult[] = []
       // The catalog-number candidate keeps its place in the candidate order but runs on

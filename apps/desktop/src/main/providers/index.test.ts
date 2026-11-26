@@ -181,6 +181,28 @@ describe('getProvider', () => {
     expect(bcSearch.mock.calls[0][2]).not.toHaveProperty('album')
   })
 
+  // A misspelt title ("Blazer" filed as "Blazzer") sinks every artist+title query and the
+  // free text ends on other acts' homonyms, while the tagged album would have found the
+  // release. Discogs alone gets the album to try after the track, never ahead of it.
+  it('hands Discogs the cleaned album as a fallback while album-first search is off', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: ['vinyl'],
+    })
+    search.mockResolvedValue([])
+    bcSearch.mockResolvedValue([])
+    const hints = { artist: 'DJ Charly', title: 'Blazer', album: 'Pokyky vinyl' }
+    await getProvider('discogs').search('dj charly blazer', 'high', hints)
+    await getProvider('bandcamp').search('dj charly blazer', 'high', hints)
+    expect(search.mock.calls[0][3]).toEqual({
+      artist: 'DJ Charly',
+      title: 'Blazer',
+      fallbackAlbum: 'Pokyky',
+    })
+    expect(bcSearch.mock.calls[0][2]).not.toHaveProperty('fallbackAlbum')
+  })
+
   it('hands the album over, cleaned like the title, when album-first search is on', async () => {
     getSettings.mockReturnValueOnce({
       discogsToken: 'tok',
