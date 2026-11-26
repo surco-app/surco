@@ -8,11 +8,14 @@ export function menuStep(key: string, current: number, count: number): number | 
   return null
 }
 
-// The stops the arrows walk. A disabled item is one too, as in a macOS menu: the keyboard
+// The stops the arrows walk. An aria-disabled item is one too, as in a macOS menu: the keyboard
 // user finds it and reads why it is off instead of the arrows jumping over it. That is why
-// menu items are disabled with aria-disabled, since a disabled button takes no focus.
+// menu items are disabled with aria-disabled. A natively disabled button takes no focus, so
+// it is left out rather than leaving the arrows stuck on it.
 export function menuItems(container: HTMLElement | null, selector: string): HTMLElement[] {
-  return Array.from(container?.querySelectorAll<HTMLElement>(selector) ?? [])
+  return Array.from(container?.querySelectorAll<HTMLElement>(selector) ?? []).filter(
+    (item) => !item.matches(':disabled'),
+  )
 }
 
 // Set on a menu as its click capture: a click on an aria-disabled item, or Enter or Space
