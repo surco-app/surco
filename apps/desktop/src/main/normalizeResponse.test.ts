@@ -60,16 +60,18 @@ beforeAll(() => {
 // saw it as the quality verdict flipping on a normalized copy, because the tooth of a
 // real enhancer saw-tooth at 20.5 kHz shrank under the bar; the highs lost from every
 // normalized file are the same fault without a verdict to reveal it.
+// Each case runs ffmpeg four times: half a second alone, past the 5 s default when a full
+// suite shares a loaded machine.
 describe('loudness normalization frequency response', () => {
   it('keeps the top octave of a limited copy at its source level', async () => {
     const before = await topBands(src)
     const after = await topBands(render(limitedLoudnormFilter(cfg, measured, RATE), 'lim.wav'))
     expect(largestShift(before, after)).toBeLessThan(0.3)
-  })
+  }, 30_000)
 
   it('keeps the top octave of a linearly normalized copy at its source level', async () => {
     const before = await topBands(src)
     const after = await topBands(render(loudnormFilter(cfg, measured, RATE), 'lin.wav'))
     expect(largestShift(before, after)).toBeLessThan(0.3)
-  })
+  }, 30_000)
 })

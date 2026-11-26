@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { menuItems, menuStep } from '../lib/menuStep'
 
 export interface ViewMenuItem {
   id: string
@@ -68,7 +69,18 @@ export function ViewMenu({
             e.preventDefault()
             e.stopPropagation()
             onClose()
+            return
           }
+          const items = menuItems(menuRef.current, '[role^="menuitem"]')
+          const next = menuStep(
+            e.key,
+            items.indexOf(document.activeElement as HTMLElement),
+            items.length,
+          )
+          if (next === null || items.length === 0) return
+          e.preventDefault()
+          e.stopPropagation()
+          items[next].focus()
         }}
         style={{ top: pos.y, left: pos.x }}
         className="absolute min-w-[200px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"

@@ -7,9 +7,11 @@ import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import type { FieldCleanedNote, FieldFormatAction } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
+import { showOption } from './Select'
 import { SuggestionChips } from './SuggestionChips'
 import { Tooltip } from './Tooltip'
 
@@ -122,6 +124,33 @@ export const Field = memo(function Field({
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [valuesOpen])
+  const valuesTriggerRef = useRef<HTMLButtonElement>(null)
+  const valuesListRef = useRef<HTMLDivElement>(null)
+  // The list takes the focus on its first value so the keyboard can reach it, and hands it
+  // back to the chevron when it closes with nothing else holding it.
+  useEffect(() => {
+    if (!valuesOpen) return
+    const first = menuItems(valuesListRef.current, '[role="option"]')[0]
+    if (first) showOption(valuesListRef.current, first)
+    return () => {
+      const at = document.activeElement
+      if (!at || at === document.body) valuesTriggerRef.current?.focus()
+    }
+  }, [valuesOpen])
+  // Tab is the next control, not the next value: closing hands the focus back to the
+  // chevron (the effect above) before the browser's own Tab runs, so it carries on from it.
+  const onValuesKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' || e.key === 'Tab') {
+      setValuesOpen(false)
+      return
+    }
+    const items = menuItems(valuesListRef.current, '[role="option"]')
+    const next = menuStep(e.key, items.indexOf(document.activeElement as HTMLElement), items.length)
+    if (next === null || items.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    showOption(valuesListRef.current, items[next])
+  }
   const listsValues = mixed === true && (mixedValues?.length ?? 0) > 0
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   // Whether the user has an edit in flight the global state hasn't caught up to yet
@@ -283,6 +312,7 @@ export const Field = memo(function Field({
               aria-label={`${label}: ${placeholderHint ?? placeholder ?? ''}`}
               aria-haspopup="listbox"
               aria-expanded={valuesOpen}
+              ref={valuesTriggerRef}
               onClick={() => setValuesOpen((o) => !o)}
               className="press absolute top-1/2 right-1 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
             >
@@ -292,18 +322,19 @@ export const Field = memo(function Field({
               <div
                 role="listbox"
                 data-menu
+                data-testid={`field-values-${name}-listbox`}
                 aria-label={label}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setValuesOpen(false)
-                }}
+                ref={valuesListRef}
+                onKeyDown={onValuesKeyDown}
                 className="animate-pop-flat absolute top-full right-0 left-0 z-20 mt-1 max-h-64 origin-top-right overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
               >
-                {mixedValues?.map(({ value: v, count }) => (
+                {mixedValues?.map(({ value: v, count }, i) => (
                   <button
                     key={v}
                     type="button"
                     role="option"
                     aria-selected={false}
+                    data-testid={`field-values-${name}-option-${i}`}
                     onClick={() => {
                       setValuesOpen(false)
                       commit(v)

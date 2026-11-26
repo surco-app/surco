@@ -4,7 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LAYER } from '../lib/layers'
-import { menuStep } from '../lib/menuStep'
+import { ignoreDisabledClick, menuItems, menuStep } from '../lib/menuStep'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
@@ -146,6 +146,14 @@ export function Select({
   // window-level shortcut handler can't also move the track selection (or close an
   // outer modal) behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
+    // Tab is the next control, not the next option: the menu closes and the browser's own
+    // Tab carries on from the trigger, wherever the list sits in the page. It is left to
+    // bubble so a dialog's focus trap around the select still sees it.
+    if (e.key === 'Tab') {
+      triggerRef.current?.focus()
+      setOpen(false)
+      return
+    }
     if (e.key === 'Escape') {
       e.stopPropagation()
       close()
@@ -156,9 +164,7 @@ export function Select({
       e.stopPropagation()
       return
     }
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-    )
+    const items = menuItems(listRef.current, '[role="option"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)
@@ -178,9 +184,10 @@ export function Select({
       data-testid={`${testid}-listbox`}
       aria-label={label}
       onKeyDown={onListKeyDown}
-      // Tab (or any move of the focus to another control) closes the menu, like a native
-      // select; the focus stays where the user sent it. The trigger and the backdrop are
-      // left to their own clicks, which close and hand the focus back to the trigger.
+      onClickCapture={ignoreDisabledClick}
+      // Focus that leaves for another control (a click elsewhere) closes the menu, like a
+      // native select. The trigger and the backdrop are left to their own clicks, which close
+      // and hand the focus back to the trigger.
       onBlur={(e) => {
         const to = e.relatedTarget
         if (!to || e.currentTarget.contains(to)) return
@@ -229,9 +236,7 @@ export function Select({
             aria-selected={o.value === value}
             aria-disabled={o.disabled || undefined}
             data-testid={`${testid}-option-${o.value}`}
-            onClick={() => {
-              if (!o.disabled) choose(o.value)
-            }}
+            onClick={() => choose(o.value)}
             className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-40 aria-disabled:hover:bg-transparent"
           >
             {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}

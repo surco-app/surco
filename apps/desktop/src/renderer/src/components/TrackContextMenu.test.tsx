@@ -128,6 +128,18 @@ describe('TrackContextMenu keyboard', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // Opened over the list, the menu has no place in the Tab order: Shift+Tab closes it
+  // just like Tab, and neither moves on, so focus goes back to the row it was opened on.
+  it('closes on Shift+Tab too, without letting the move go on', () => {
+    const { onClose } = renderMenu()
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('track-menu'), {
+      key: 'Tab',
+      shiftKey: true,
+    })
+    expect(carriedOn).toBe(false)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   // VoiceOver announces "menu" with no name and reads the dividers as nothing at all; the
   // name says what the menu acts on and the separators mark where each group starts.
   it('names the menu and exposes its dividers as separators', () => {
@@ -232,22 +244,34 @@ describe('TrackContextMenu playlist actions', () => {
 
   it('disables inserting a separator when the collection has none, and says why', () => {
     renderMenu({ playlist: playlist({ canInsertSeparator: false }) })
-    expect(screen.getByTestId('track-menu-insert-separator')).toBeDisabled()
+    expect(screen.getByTestId('track-menu-insert-separator')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(screen.getByTestId('track-menu-insert-separator')).toHaveTextContent(
       'Your collection has no separator to copy',
     )
   })
 
-  // A disabled button cannot take focus: counted as a stop, it traps the arrows and the
-  // keyboard never reaches Info, Remove or Trash below it.
-  it('lets the arrow keys pass over a disabled item', () => {
-    renderMenu({ playlist: playlist({ canInsertSeparator: false }) })
+  // Like a macOS menu, the arrows stop on an item that cannot be used, so a keyboard user
+  // finds it and reads why under it; picking it, by Enter or by a click, does nothing.
+  it('stops the arrow keys on a disabled item, which does nothing when picked', () => {
+    const p = playlist({ canInsertSeparator: false })
+    const props = renderMenu({ playlist: p })
     const menu = screen.getByTestId('track-menu')
+    const item = screen.getByTestId('track-menu-insert-separator')
     screen.getByTestId('track-menu-add-to').focus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(item).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
+    fireEvent.keyDown(item, { key: 'Enter' })
+    fireEvent.click(item)
+    expect(p.onInsertSeparator).not.toHaveBeenCalled()
+    expect(props.onClose).not.toHaveBeenCalled()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('track-menu-info')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
-    expect(screen.getByTestId('track-menu-add-to')).toHaveFocus()
+    expect(item).toHaveFocus()
   })
 
   it('names the playlist a row is removed from', () => {

@@ -3,7 +3,7 @@ import type React from 'react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { menuStep } from '../lib/menuStep'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { foldText } from '../lib/normalizeText'
 import { formatCount } from '../lib/stats'
 import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
@@ -528,7 +528,11 @@ export function FilterBar({
   // The open menu owns its keys: each handled press stops propagating so the window-level
   // shortcut handler can't also move the track selection behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
+    // The list is portaled to the end of the page, so a Tab left to run from inside it
+    // went on from there. Moved to the trigger first, the browser's own Tab (or Shift+Tab)
+    // carries on from the control the menu belongs to.
     if (e.key === 'Tab') {
+      triggerRef.current?.focus()
       setOpen(false)
       return
     }
@@ -542,9 +546,7 @@ export function FilterBar({
       return
     }
     if (!focusTestId) return
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-    )
+    const items = menuItems(listRef.current, '[role="option"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)

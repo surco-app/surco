@@ -388,8 +388,38 @@ describe('ExportButton', () => {
   it('disables the Apple Music destination while FLAC is the picked format', () => {
     render(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(screen.getByTestId('process-destination-appleMusic')).toBeDisabled()
-    expect(screen.getByTestId('process-destination-beside')).toBeEnabled()
+    expect(screen.getByTestId('process-destination-appleMusic')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    expect(screen.getByTestId('process-destination-beside')).not.toHaveAttribute('aria-disabled')
+  })
+
+  // Like a macOS menu, the arrows stop on the greyed Apple Music so a keyboard user finds
+  // it, but picking it, by Enter or by a click, leaves the destination where it was.
+  it('stops the arrows on the Apple Music destination under FLAC, which does nothing when picked', () => {
+    const onSelectDestination = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        outputFormat="flac"
+        onSelectDestination={onSelectDestination}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    const menu = screen.getByRole('menu')
+    const music = screen.getByTestId('process-destination-appleMusic')
+    screen.getByTestId('process-destination-folder').focus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(music).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
+    fireEvent.keyDown(music, { key: 'Enter' })
+    fireEvent.click(music)
+    expect(onSelectDestination).not.toHaveBeenCalled()
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('process-destination-beside')).toHaveFocus()
   })
 
   // While a track converts, the button mirrors the row in the track list: the
@@ -961,9 +991,9 @@ describe('ExportButton library copy', () => {
     )
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     const update = screen.getByTestId('library-copy-update')
-    expect(update).toBeDisabled()
+    expect(update).toHaveAttribute('aria-disabled', 'true')
     expect(update).toHaveTextContent('Keeps its audio')
-    expect(screen.getByTestId('library-copy-replace')).toBeEnabled()
+    expect(screen.getByTestId('library-copy-replace')).not.toHaveAttribute('aria-disabled')
   })
 
   it('reaches Replace with the arrow keys from the first item of the menu', () => {

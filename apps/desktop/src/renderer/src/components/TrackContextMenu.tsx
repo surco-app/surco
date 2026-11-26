@@ -3,7 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SourceNode } from '../../../shared/types'
-import { menuStep } from '../lib/menuStep'
+import { ignoreDisabledClick, menuItems, menuStep } from '../lib/menuStep'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 import type { ViewMenuItem } from './ViewMenu'
@@ -89,10 +89,10 @@ function MenuItem({
       // One Tab stop for the whole menu: the arrows move between items, Tab leaves.
       tabIndex={-1}
       data-testid={testid}
-      disabled={disabled}
+      aria-disabled={disabled || undefined}
       onClick={onClick}
       onPointerEnter={onHover}
-      className={`block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent ${
+      className={`block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
@@ -221,12 +221,7 @@ export function TrackContextMenu({
       onClose()
       return
     }
-    // A disabled item cannot take focus; counted as a stop, it would trap the arrows.
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>(
-        '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]',
-      ) ?? [],
-    )
+    const items = menuItems(menuRef.current, '[role="menuitem"], [role="menuitemcheckbox"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)
@@ -260,6 +255,7 @@ export function TrackContextMenu({
         aria-label={tr('common.trackActions')}
         data-testid="track-menu"
         onKeyDown={onMenuKeyDown}
+        onClickCapture={ignoreDisabledClick}
         style={{ top: pos.y, left: pos.x }}
         className="absolute min-w-[210px] max-w-[320px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >

@@ -6385,7 +6385,7 @@ describe('App source playlists', () => {
     await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
     const insert = await screen.findByTestId('track-menu-insert-separator')
-    await waitFor(() => expect(insert).toBeEnabled())
+    await waitFor(() => expect(insert).not.toHaveAttribute('aria-disabled'))
     fireEvent.click(insert)
     await waitFor(() =>
       expect(edit).toHaveBeenCalledWith(
@@ -14256,7 +14256,7 @@ describe('App copy and paste metadata from the editor', () => {
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),
     )
     openMore()
-    expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
+    expect(screen.getByTestId('paste-meta-btn')).toHaveAttribute('aria-disabled', 'true')
     openMore()
     fireEvent.click(screen.getByTestId('copy-meta-btn'))
     expect(await screen.findByText('Metadata copied')).toBeInTheDocument()
@@ -14406,7 +14406,7 @@ describe('App paste metadata onto a selection', () => {
   it('disables the editor paste while nothing has been copied', async () => {
     await setup(false)
     openMore()
-    expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
+    expect(screen.getByTestId('paste-meta-btn')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('offers the paste in the list menu when several rows are selected', async () => {
@@ -14931,8 +14931,8 @@ describe('App Music review', () => {
       expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent(
         '“Friday” has no tracks to review',
       )
-      expect(screen.getByTestId('list-review-open')).toBeDisabled()
-      expect(screen.getByTestId('music-duplicates-open')).toBeDisabled()
+      expect(screen.getByTestId('list-review-open')).toHaveAttribute('aria-disabled', 'true')
+      expect(screen.getByTestId('music-duplicates-open')).toHaveAttribute('aria-disabled', 'true')
       runMenu('list-review')
       await act(async () => {})
       expect(screen.queryByTestId('music-review')).not.toBeInTheDocument()
@@ -15205,7 +15205,9 @@ describe('App list review', () => {
     await waitFor(() => expect(screen.queryByTestId('music-review')).not.toBeInTheDocument())
     runMenu('process-all')
     fireEvent.click(await screen.findByTestId('list-actions-more'))
-    await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
+    await waitFor(() =>
+      expect(screen.getByTestId('list-review-open')).toHaveAttribute('aria-disabled', 'true'),
+    )
   })
 
   // No source open, the review is the list's, and the line says it writes the files.
@@ -16043,9 +16045,11 @@ describe('App list header', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('list-actions-more'))
-    expect(screen.getByTestId('trash-selected')).toBeEnabled()
+    expect(screen.getByTestId('trash-selected')).not.toHaveAttribute('aria-disabled')
     fireEvent.keyDown(window, { key: 'Escape' })
-    await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
+    await waitFor(() =>
+      expect(screen.getByTestId('trash-selected')).toHaveAttribute('aria-disabled', 'true'),
+    )
   })
 
   // The visible button only drops rows from the list, so it must never reach the files. It
@@ -16074,9 +16078,11 @@ describe('App list header', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('list-actions-more'))
-    expect(screen.getByTestId('remove-selected')).toBeEnabled()
+    expect(screen.getByTestId('remove-selected')).not.toHaveAttribute('aria-disabled')
     fireEvent.keyDown(window, { key: 'Escape' })
-    await waitFor(() => expect(screen.getByTestId('remove-selected')).toBeDisabled())
+    await waitFor(() =>
+      expect(screen.getByTestId('remove-selected')).toHaveAttribute('aria-disabled', 'true'),
+    )
   })
 
   // The OS Trash is recoverable, so the menu moves the selection there at once with no

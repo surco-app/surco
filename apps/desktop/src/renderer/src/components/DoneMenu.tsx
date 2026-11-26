@@ -6,6 +6,7 @@ import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import { FORMATS } from './ExportButton'
 import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
@@ -95,6 +96,7 @@ export function DoneMenu({
           role="menu"
           aria-label={tr('editor.moreActions')}
           onKeyDown={onMenuKeyDown}
+          onClickCapture={ignoreDisabledClick}
           className={`${SPLIT_MENU} w-64`}
         >
           <button
@@ -103,7 +105,7 @@ export function DoneMenu({
             role="menuitem"
             aria-disabled={incomplete || undefined}
             aria-describedby={incomplete && incompleteReason ? reasonId : undefined}
-            onClick={incomplete ? undefined : () => run(() => onProcess(outputFormat))}
+            onClick={() => run(() => onProcess(outputFormat))}
             className={`${SPLIT_ITEM} justify-start gap-2 font-medium aria-disabled:cursor-not-allowed aria-disabled:opacity-40`}
           >
             <RotateCw className={ITEM_ICON} aria-hidden="true" />
@@ -152,9 +154,9 @@ export function DoneMenu({
                 data-testid={`process-destination-${d}`}
                 role="menuitemradio"
                 aria-checked={d === destination}
-                disabled={d === 'appleMusic' && outputFormat === 'flac'}
+                aria-disabled={(d === 'appleMusic' && outputFormat === 'flac') || undefined}
                 onClick={() => onSelectDestination(d)}
-                className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+                className={`${SPLIT_ITEM} aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
                   d === destination ? 'font-medium text-[var(--color-accent)]' : ''
                 }`}
               >
@@ -190,9 +192,9 @@ export function DoneMenu({
                 type="button"
                 data-testid="menu-add-apple-music"
                 role="menuitem"
-                disabled={music.busy}
+                aria-disabled={music.busy || undefined}
                 onClick={() => run(music.onAdd)}
-                className={`${SPLIT_ITEM} justify-start gap-2 disabled:opacity-40 disabled:hover:bg-transparent`}
+                className={`${SPLIT_ITEM} justify-start gap-2 aria-disabled:opacity-40 aria-disabled:hover:bg-transparent`}
               >
                 <Music className={ITEM_ICON} aria-hidden="true" />
                 {music.label}

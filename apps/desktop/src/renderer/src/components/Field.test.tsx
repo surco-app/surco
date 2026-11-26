@@ -554,6 +554,51 @@ describe('Field mixed values', () => {
     render(<Field name="artist" label="Artist" value="X" onChange={vi.fn()} />)
     expect(screen.queryByTestId('field-values-artist')).toBeNull()
   })
+
+  // Opened from the keyboard, the list left the focus on the chevron, so its values were
+  // only reachable with the mouse. It takes the focus on the first value, the arrows walk
+  // it like every other menu and stay away from the editor's shortcuts behind it.
+  it('moves the focus into the list and walks it with the arrows, Home and End', () => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    const list = screen.getByTestId('field-values-artist-listbox')
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    expect(screen.getByTestId('field-values-artist-option-0')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('field-values-artist-option-1')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'End' })
+    expect(screen.getByTestId('field-values-clear-artist')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('field-values-artist-option-0')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowUp' })
+    expect(screen.getByTestId('field-values-clear-artist')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'Home' })
+    expect(screen.getByTestId('field-values-artist-option-0')).toHaveFocus()
+    window.removeEventListener('keydown', seen)
+    expect(seen).not.toHaveBeenCalled()
+  })
+
+  // Tab means the next control, not the next value: the list closes and the browser's own
+  // Tab carries on from the chevron it hangs from, both ways.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes on %s and lets it carry on from the chevron', (_name, shiftKey) => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('field-values-artist-listbox'), {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(true)
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(screen.getByTestId('field-values-artist')).toHaveFocus()
+  })
 })
 
 describe('Field read-only', () => {

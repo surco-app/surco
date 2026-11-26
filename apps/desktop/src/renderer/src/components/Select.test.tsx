@@ -49,6 +49,39 @@ describe('Select', () => {
     outside.remove()
   })
 
+  // The options are buttons, so Tab walked from one option to the next and kept the menu
+  // open until it ran off the last one; a portaled menu then went on from the end of the
+  // page. Tab means the next control: the menu closes and the move goes on from the
+  // trigger, both ways, inline or portaled.
+  it.each([
+    { name: 'Tab', shiftKey: false, portal: false },
+    { name: 'Shift+Tab', shiftKey: true, portal: false },
+    { name: 'Tab', shiftKey: false, portal: true },
+    { name: 'Shift+Tab', shiftKey: true, portal: true },
+  ])(
+    'closes on $name and lets it carry on from the trigger (portaled: $portal)',
+    ({ shiftKey, portal }) => {
+      render(
+        <Select
+          value="import"
+          options={options}
+          onChange={vi.fn()}
+          label="Sort"
+          testid="sort"
+          portal={portal}
+        />,
+      )
+      fireEvent.click(screen.getByTestId('sort'))
+      const carriedOn = fireEvent.keyDown(screen.getByTestId('sort-option-import'), {
+        key: 'Tab',
+        shiftKey,
+      })
+      expect(carriedOn).toBe(true)
+      expect(screen.queryByTestId('sort-listbox')).toBeNull()
+      expect(screen.getByTestId('sort')).toHaveFocus()
+    },
+  )
+
   it('opens a listbox on click and marks the current option as selected', () => {
     renderSelect('name')
     fireEvent.click(screen.getByTestId('sort'))
@@ -485,6 +518,51 @@ describe('Select portaled menu', () => {
     expect(screen.getByTestId('sort-option-wipe')).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(screen.getByTestId('sort-option-wipe'))
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('Select disabled options', () => {
+  // Like a macOS menu, the arrows stop on an option that cannot be picked, so the keyboard
+  // user finds it; Enter on it does nothing and the menu stays open.
+  it('stops the arrows, Home and End on a disabled option, which does nothing when picked', () => {
+    const onChange = vi.fn<(value: string) => void>()
+    render(
+      <Select
+        value="import"
+        options={[
+          { value: 'locked-first', label: 'Locked first', disabled: true },
+          { value: 'import', label: 'Default' },
+          { value: 'locked', label: 'Locked', disabled: true },
+          { value: 'name', label: 'Name' },
+          { value: 'locked-last', label: 'Locked last', disabled: true },
+        ]}
+        onChange={onChange}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    const list = screen.getByTestId('sort-listbox')
+    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-locked')).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
+    fireEvent.keyDown(screen.getByTestId('sort-option-locked'), { key: 'Enter' })
+    fireEvent.click(screen.getByTestId('sort-option-locked'))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(list).toBeInTheDocument()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-locked-first')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowUp' })
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'Home' })
+    expect(screen.getByTestId('sort-option-locked-first')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'End' })
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
   })
 })
 

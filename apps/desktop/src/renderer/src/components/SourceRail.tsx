@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
+import { menuItems, menuStep } from '../lib/menuStep'
 import {
   AppleMusicIcon,
   EngineIcon,
@@ -239,7 +240,18 @@ export function SourceRail({
                 e.preventDefault()
                 e.stopPropagation()
                 setMenu(null)
+                return
               }
+              const items = menuItems(menuRef.current, '[role^="menuitem"]')
+              const next = menuStep(
+                e.key,
+                items.indexOf(document.activeElement as HTMLElement),
+                items.length,
+              )
+              if (next === null || items.length === 0) return
+              e.preventDefault()
+              e.stopPropagation()
+              items[next].focus()
             }}
             style={{ top: pos.y, left: pos.x }}
             className="absolute min-w-[180px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"

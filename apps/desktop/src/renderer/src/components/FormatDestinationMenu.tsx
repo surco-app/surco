@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, LibraryCopyAction, OutputFormat } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import { SPLIT_ITEM, SPLIT_MENU } from './SplitButton'
 
 export function FormatDestinationMenu({
@@ -54,6 +55,7 @@ export function FormatDestinationMenu({
       role="menu"
       aria-label={tr('editor.chooseFormat')}
       onKeyDown={onMenuKeyDown}
+      onClickCapture={ignoreDisabledClick}
       className={className}
     >
       {/* First, since with a copy in the library the body's press acts on that copy: Update
@@ -79,9 +81,12 @@ export function FormatDestinationMenu({
               data-testid={`library-copy-${action}`}
               role="menuitemradio"
               aria-checked={action === libraryCopy.action}
-              disabled={action === 'update' ? !libraryCopy.updatable : !libraryCopy.replaceable}
+              aria-disabled={
+                (action === 'update' ? !libraryCopy.updatable : !libraryCopy.replaceable) ||
+                undefined
+              }
               onClick={() => libraryCopy.onPick(action)}
-              className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+              className={`${SPLIT_ITEM} aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
                 action === libraryCopy.action ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
@@ -143,9 +148,9 @@ export function FormatDestinationMenu({
             role="menuitemradio"
             aria-checked={d === destination}
             // Music can't ingest FLAC — the same pin the Settings radio applies.
-            disabled={d === 'appleMusic' && outputFormat === 'flac'}
+            aria-disabled={(d === 'appleMusic' && outputFormat === 'flac') || undefined}
             onClick={() => onPickDestination(d)}
-            className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+            className={`${SPLIT_ITEM} aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
               d === destination ? 'font-medium text-[var(--color-accent)]' : ''
             }`}
           >

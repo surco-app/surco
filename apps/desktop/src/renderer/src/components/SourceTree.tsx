@@ -19,7 +19,7 @@ import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
-import { menuStep } from '../lib/menuStep'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { formatCount } from '../lib/stats'
@@ -242,6 +242,13 @@ export const SourceTree = memo(function SourceTree({
     return () => menuOpener.current?.focus()
   }, [menuOpen])
   const onMenuKeyDown = (e: React.KeyboardEvent): void => {
+    // Closing hands the focus back to the playlist (the effect above) before the browser's
+    // own Tab runs, so the move carries on from it rather than from the menu drawn after
+    // the whole tree.
+    if (e.key === 'Tab') {
+      setMenu(null)
+      return
+    }
     if (e.key === 'Escape') {
       e.stopPropagation()
       setMenu(null)
@@ -251,9 +258,7 @@ export const SourceTree = memo(function SourceTree({
       e.stopPropagation()
       return
     }
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
-    )
+    const items = menuItems(menuRef.current, '[role="menuitem"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)

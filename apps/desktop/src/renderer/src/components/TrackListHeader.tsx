@@ -38,6 +38,7 @@ import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import type { FilterSelection, FilterTab, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
@@ -147,11 +148,11 @@ function MenuAction({
       role="menuitem"
       data-testid={testid}
       data-destructive={danger ? 'true' : 'false'}
-      disabled={disabled}
+      aria-disabled={disabled || undefined}
       onClick={onClick}
       aria-label={label}
       aria-describedby={detail ? detailId : undefined}
-      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
@@ -456,6 +457,7 @@ export function TrackListHeader({
                     role="menu"
                     aria-label={tr('header.moreActions')}
                     onKeyDown={onMenuKeyDown}
+                    onClickCapture={ignoreDisabledClick}
                     style={{
                       top: menuPos.top,
                       bottom: menuPos.bottom,

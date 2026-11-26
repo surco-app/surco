@@ -601,3 +601,46 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(onChange.mock.calls[0][0]).not.toHaveProperty('whenEach')
   })
 })
+
+describe('CueRuleRow block menus from the keyboard', () => {
+  // Opened with Enter on a token, the menu left the focus on the token and none of its
+  // choices could be reached without the mouse. It takes the focus on the current choice,
+  // the arrows walk it like every other menu, and they stay away from the Settings behind.
+  it('moves the focus to the current choice and walks the choices with the arrows, Home and End', () => {
+    setup({ ...RULE, when: 'fits' })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    const menu = screen.getByTestId('cue-rule-0-when-menu')
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    expect(screen.getByTestId('cue-rule-0-when-option-fits')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cue-rule-0-when-option-previous')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'End' })
+    expect(screen.getByTestId('cue-rule-0-when-option-clear')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cue-rule-0-when-option-fits')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowUp' })
+    expect(screen.getByTestId('cue-rule-0-when-option-clear')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'Home' })
+    expect(screen.getByTestId('cue-rule-0-when-option-fits')).toHaveFocus()
+    window.removeEventListener('keydown', seen)
+    expect(seen).not.toHaveBeenCalled()
+  })
+
+  // Tab means the next control: the menu closes and the browser's own Tab carries on from
+  // the token it hangs from, both ways, instead of walking through its choices.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes on %s and lets it carry on from the token', (_name, shiftKey) => {
+    setup({ ...RULE, when: 'fits' })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('cue-rule-0-when-option-fits'), {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(true)
+    expect(screen.queryByTestId('cue-rule-0-when-menu')).toBeNull()
+    expect(screen.getByTestId('cue-rule-0-when')).toHaveFocus()
+  })
+})

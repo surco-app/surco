@@ -22,6 +22,7 @@ import {
   withRepeatWhen,
 } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { CuePalette } from './CuePalette'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
@@ -178,6 +179,15 @@ export function CueRuleRow({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
+  // A block menu opens on its current choice, like a native menu of radio items, so Enter
+  // on the token leaves the keyboard where the arrows can reach the rest. The colour
+  // palette has no radio items and keeps its own focus.
+  useEffect(() => {
+    if (open === null) return
+    const items = menuItems(paletteRef.current, '[role="menuitemradio"]')
+    ;(items.find((el) => el.getAttribute('aria-checked') === 'true') ?? items[0])?.focus()
+  }, [open])
+
   useLayoutEffect(() => {
     const palette = paletteRef.current
     const anchor = palette?.parentElement
@@ -202,6 +212,21 @@ export function CueRuleRow({
     const token = rowRef.current?.querySelector<HTMLElement>(`[data-testid="${id}-${open}"]`)
     setOpen(null)
     token?.focus()
+  }
+
+  // Tab is the next control, not the next choice: back on the token first, the browser's
+  // own Tab (or Shift+Tab) carries on from it.
+  const onBlockMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      closeToToken()
+      return
+    }
+    const items = menuItems(paletteRef.current, '[role="menuitemradio"]')
+    const next = menuStep(e.key, items.indexOf(document.activeElement as HTMLElement), items.length)
+    if (next === null || items.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    items[next].focus()
   }
 
   const pickColor = (slot: number, color: number) => {
@@ -344,6 +369,7 @@ export function CueRuleRow({
           ref={paletteRef}
           role="menu"
           data-testid={`${id}-${block}-menu`}
+          onKeyDown={onBlockMenuKeyDown}
           data-align={paletteRight ? 'right' : 'left'}
           data-side={menuUp ? 'top' : 'bottom'}
           style={insideLeft}
