@@ -185,9 +185,9 @@ export function Select({
       aria-label={label}
       onKeyDown={onListKeyDown}
       onClickCapture={ignoreDisabledClick}
-      // Tab (or any move of the focus to another control) closes the menu, like a native
-      // select; the focus stays where the user sent it. The trigger and the backdrop are
-      // left to their own clicks, which close and hand the focus back to the trigger.
+      // Focus that leaves for another control (a click elsewhere) closes the menu, like a
+      // native select. The trigger and the backdrop are left to their own clicks, which close
+      // and hand the focus back to the trigger.
       onBlur={(e) => {
         const to = e.relatedTarget
         if (!to || e.currentTarget.contains(to)) return
