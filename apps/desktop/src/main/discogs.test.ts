@@ -195,6 +195,61 @@ describe('search', () => {
     expect(url.searchParams.get('release_title')).toBe('Play')
   })
 
+  // "Blazer" is filed as "Blazzer": the artist+title, tracklist and free-text queries all
+  // miss or land on other acts, while the tagged album finds the release. Tried after
+  // the precise track queries and before free text, so it never preempts a track hit and
+  // stays pinned to the artist instead of the bare title's homonyms.
+  it('tries the fallback album after the track queries miss and before free text', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [] }),
+      res(200, { results: [] }),
+      res(200, { results: [{ id: 927767, title: 'DJ Charly & Garlic - Pokyky' }] }),
+    ])
+    const out = await search('dj charly blazer', 'tok', undefined, {
+      artist: 'DJ Charly; Garlic',
+      title: 'Blazer',
+      fallbackAlbum: 'Pokyky',
+    })
+    expect(out).toEqual([{ id: 927767, title: 'DJ Charly & Garlic - Pokyky', provider: 'discogs' }])
+    const third = new URL(fetchMock.mock.calls[2][0] as string)
+    expect(third.searchParams.get('artist')).toBe('DJ Charly; Garlic')
+    expect(third.searchParams.get('release_title')).toBe('Pokyky')
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  // Discogs' artist field matches loosely: "Elastica" with "Elastica Vol. 1" brought only
+  // La Banda Elastica's album, where the free text had found Elastica's own. The fallback
+  // stands only when a row credits the tagged act itself, or the free text gets its turn.
+  it('skips a fallback album credited to another act and lets the free text answer', async () => {
+    const fetchMock = mockSequence([
+      res(200, { results: [] }),
+      res(200, { results: [] }),
+      res(200, { results: [] }),
+      res(200, { results: [{ id: 5494719, title: 'La Banda Elastica* - La Musica De La Banda Elastica  Vol. 1' }] }),
+      res(200, { results: [{ id: 533542, title: 'Elastica - Vol. 1' }] }),
+    ])
+    const out = await search('elastica tashure', 'tok', undefined, {
+      artist: 'Elastica',
+      title: 'Tashure Remastered',
+      fallbackAlbum: 'Elastica Vol. 1',
+    })
+    expect(out.map((r) => r.id)).toEqual([533542])
+    const last = new URL(fetchMock.mock.calls.at(-1)?.[0] as string)
+    expect(last.searchParams.get('q')).not.toBeNull()
+  })
+
+  it('leaves the fallback album untried when the track queries find the release', async () => {
+    const fetchMock = mockFetch([{ id: 5 }])
+    await search('moby porcelain', 'tok', undefined, {
+      artist: 'Moby',
+      title: 'Porcelain',
+      fallbackAlbum: 'Play',
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const first = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(first.searchParams.get('release_title')).toBe('Porcelain')
+  })
+
   // A wrong or junk album tag must never cost the track its search: an empty album
   // answer falls through to the exact ladder the track always had.
   it('falls back to the title ladder when the album query finds nothing', async () => {

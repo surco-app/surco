@@ -89,6 +89,10 @@ export interface SearchHints {
   // The user typed this album (with its artist) into the search box, which asks for the
   // album search whether or not "Search by album first" is on.
   albumTyped?: boolean
+  // The tagged album while "Search by album first" is off, handed to Discogs alone. It is
+  // tried only after every artist+title query misses, before the free text, so a
+  // misspelt title still finds the release the file came from.
+  fallbackAlbum?: string
   // The year from the file's date tag. Discogs files hundreds of editions under one album
   // title, so the album search asks for this year's editions first.
   year?: string
