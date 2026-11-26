@@ -24,6 +24,21 @@ export function barLines(grid: { ms: number; beat: number }[]): { ms: number }[]
   return grid.filter((b) => b.beat === 1).map((b) => ({ ms: b.ms }))
 }
 
+// A file that starts mid-kick puts that kick's beat a few ms before 0, where no grid can
+// hold it (rekordbox's own starts on the next beat), so the DJ sees the first kick with no
+// line. Drawing it at 0 is only for the eye: snapping and saving keep the real grid. Past
+// this reach the beat lies too far back for 0 to look like that kick.
+const CUT_KICK_MS = 20
+
+export function withCutFirstBeat(
+  grid: { ms: number; beat: number }[],
+): { ms: number; beat: number }[] {
+  if (grid.length < 2 || grid[0].ms <= 0) return grid
+  const before = grid[0].ms - (grid[1].ms - grid[0].ms)
+  if (before > 0 || before < -CUT_KICK_MS) return grid
+  return [{ ms: 0, beat: grid[0].beat === 1 ? 4 : grid[0].beat - 1 }, ...grid]
+}
+
 export function quantizePoints(grid: { ms: number; beat: number }[], unit: CueQuantize): number[] {
   const downbeats = grid.filter((b) => b.beat === 1)
   const points = unit === 'bar' && downbeats.length > 0 ? downbeats : grid

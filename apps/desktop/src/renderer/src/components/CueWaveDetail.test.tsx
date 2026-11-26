@@ -112,6 +112,29 @@ describe('CueWaveDetail', () => {
     }
   })
 
+  it('draws the line of a first kick whose attack the file cut off, at 0, because the grid can hold no beat before the track starts and the DJ sees a kick with no line', () => {
+    const period = 402.7
+    const cut = Array.from({ length: 64 }, (_, i) => ({
+      ms: 397 + i * period,
+      beat: ((i + 1) % 4) + 1,
+    }))
+    setup({ grid: cut, playheadMs: 0, quantize: 'beat' })
+    const bars = screen.getAllByTestId('cue-detail-bar').map((b) => Number(b.dataset.ms))
+    expect(bars).toContain(0)
+    expect(bars).toContain(397 + 3 * period)
+  })
+
+  it('draws no line at 0 when the beat before the first one falls well before the track starts, so a line never sits where no kick sounds', () => {
+    const period = 402.7
+    const early = Array.from({ length: 64 }, (_, i) => ({
+      ms: 300 + i * period,
+      beat: ((i + 1) % 4) + 1,
+    }))
+    setup({ grid: early, playheadMs: 0, quantize: 'beat' })
+    const bars = screen.getAllByTestId('cue-detail-bar').map((b) => Number(b.dataset.ms))
+    expect(bars).not.toContain(0)
+  })
+
   it('shows fewer bars once zoomed in', () => {
     setup({ bars: 8 })
     expect(screen.getAllByTestId('cue-detail-bar')).toHaveLength(9)

@@ -25,7 +25,7 @@ import {
   wheelZoom,
   zoomStep,
 } from '../lib/cuePlayhead'
-import { barLines, quantizePoints } from '../lib/cueWave'
+import { barLines, quantizePoints, withCutFirstBeat } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import type { WaveCue } from './CueWave'
 import { Tooltip } from './Tooltip'
@@ -161,7 +161,8 @@ export function CueWaveDetail({
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beats = useMemo(() => grid.map((b) => b.ms), [grid])
-  const lines = useMemo(() => barLines(grid).map((b) => b.ms), [grid])
+  const drawn = useMemo(() => withCutFirstBeat(grid), [grid])
+  const lines = useMemo(() => barLines(drawn).map((b) => b.ms), [drawn])
   const painter = useRef<{
     g: CanvasRenderingContext2D
     width: number
@@ -465,7 +466,7 @@ export function CueWaveDetail({
           className="relative w-full shrink-0 select-none overflow-hidden"
         >
           {quantize === 'beat' &&
-            grid
+            drawn
               .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
               .map((b) => (
                 <span
