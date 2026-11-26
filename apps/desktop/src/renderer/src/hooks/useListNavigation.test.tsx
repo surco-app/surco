@@ -148,3 +148,64 @@ describe('useListNavigation across renders', () => {
     expect(revealRow).toHaveBeenCalledWith('t2')
   })
 })
+
+describe('useListNavigation paging', () => {
+  function pageSetup(selectedId: string | null, rowHeight: number, viewport: number) {
+    const rowEls = { current: new Map<string, HTMLButtonElement>() }
+    for (const t of tracks.slice(0, 60)) {
+      const el = document.createElement('button')
+      el.getBoundingClientRect = () => new DOMRect(0, 0, 300, rowHeight)
+      document.body.append(el)
+      rowEls.current.set(t.id, el)
+    }
+    const container = document.createElement('div')
+    Object.defineProperty(container, 'clientHeight', { value: viewport })
+    const setSelection = vi.fn()
+    const { result } = renderHook(() =>
+      useListNavigation({
+        visibleTracks: tracks,
+        selectedId,
+        selectedIds: new Set(selectedId ? [selectedId] : []),
+        setSelection,
+        continuousPlayback: false,
+        playerVisible: false,
+        playerTrack: null,
+        closePlayer: vi.fn(),
+        rowEls,
+        listScrollRef: { current: container },
+        qualityFilterRef: { current: null },
+      }),
+    )
+    return { result, setSelection }
+  }
+
+  // Page Down must land one screen further minus a row of overlap, measured from the real
+  // row height: 400 px of pane over 36 px rows plus the 4 px gap fit 10 rows, so the DJ
+  // keeps the last row of the old page in sight and moves 9.
+  it('moves Page Down by the rows that fit on screen, keeping one row of overlap', () => {
+    const { result, setSelection } = pageSetup('t10', 36, 400)
+    act(() => result.current.pageSelection(1))
+    expect(setSelection).toHaveBeenLastCalledWith({ ids: ['t19'], anchor: 't19' })
+  })
+
+  it('moves Page Up the same page back toward the top', () => {
+    const { result, setSelection } = pageSetup('t30', 36, 400)
+    act(() => result.current.pageSelection(-1))
+    expect(setSelection).toHaveBeenLastCalledWith({ ids: ['t21'], anchor: 't21' })
+  })
+
+  // Compact density halves the row; a guessed constant would page past rows the DJ never saw.
+  it('pages further when the rows are shorter, because more of them fit', () => {
+    const { result, setSelection } = pageSetup('t0', 16, 400)
+    act(() => result.current.pageSelection(1))
+    expect(setSelection).toHaveBeenLastCalledWith({ ids: ['t19'], anchor: 't19' })
+  })
+
+  // The list mounts only the rows on screen, so the selected row may be gone after a long
+  // scroll; another rendered row still gives the height, or Page Down would crawl one row.
+  it('measures another rendered row when the selected one is not mounted', () => {
+    const { result, setSelection } = pageSetup('t100', 36, 400)
+    act(() => result.current.pageSelection(1))
+    expect(setSelection).toHaveBeenLastCalledWith({ ids: ['t109'], anchor: 't109' })
+  })
+})
