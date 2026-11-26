@@ -68,6 +68,28 @@ describe('CueGridStrip', () => {
     expect(checks()[0]).toHaveAccessibleName('0:28, rejilla +240 ms')
   })
 
+  // With the kicks heard only in a few stretches, two of the six places land on the two ends
+  // of the same stretch, seconds apart, and their offsets were printed one over the other.
+  it('leaves out a beat that would sit on top of another one, so no two offsets overlap', () => {
+    const heardAt = [
+      ...Array.from({ length: 6 }, (_, i) => 230000 + i * 2000),
+      ...Array.from({ length: 6 }, (_, i) => 340000 + i * 2000),
+    ]
+    setup({
+      audit: {
+        windows: heardAt.map((ms) => ({ ms, offsetMs: 0 })),
+        total: 24,
+        periodMs: 500,
+        heardPerMinute: 30,
+      },
+    })
+    const placed = checks().map((c) => Number.parseFloat(c.style.left))
+    expect(placed.length).toBeGreaterThan(1)
+    for (const [i, left] of placed.entries())
+      for (const other of placed.slice(i + 1))
+        expect(Math.abs(other - left)).toBeGreaterThanOrEqual(100 / 12)
+  })
+
   it('puts the playhead on the kick of a beat when it is clicked, ready to pin it', () => {
     const { onSeek } = setup({ beats: beatsFrom(46) })
     fireEvent.click(checks()[5])

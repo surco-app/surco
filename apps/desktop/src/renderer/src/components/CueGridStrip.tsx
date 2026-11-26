@@ -38,11 +38,12 @@ export function CueGridStrip({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const pct = (ms: number): string => `${(ms / durationMs) * 100}%`
-  const checks = Array.from({ length: CHECKS }, (_, i) =>
-    auditNear(audit, kicks, (durationMs * (i + 0.5)) / CHECKS),
-  )
-    .flatMap((near) => (near ? [{ kickMs: near.hitMs, offsetMs: near.gridMs }] : []))
-    .filter((check, i, all) => all.findIndex((c) => c.kickMs === check.kickMs) === i)
+  const checks: { kickMs: number; offsetMs: number }[] = []
+  for (let i = 0; i < CHECKS; i++) {
+    const near = auditNear(audit, kicks, (durationMs * (i + 0.5)) / CHECKS)
+    if (near && !checks.some((c) => Math.abs(c.kickMs - near.hitMs) < durationMs / CHECKS / 2))
+      checks.push({ kickMs: near.hitMs, offsetMs: near.gridMs })
+  }
   const onCheck = (ms: number) => checks.some((c) => Math.abs(c.kickMs - ms) < 1)
   return (
     <div data-testid="cues-grid-windows" className="relative h-5 shrink-0">
