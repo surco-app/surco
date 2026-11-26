@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Bom: menos de 0,2%.",
     "loudnessFixDc": "Dá para corrigir. Marque “Remover deslocamento DC (centralizar em 0,0)” em Normalização de volume (modo Volume ou Pico).",
     "loudnessRangeNoise": "Bom: -45 dB ou menos.",
-    "loudnessFixNoise": "Não dá para corrigir aqui. O Surco não remove ruído. Vem da fonte ou da captura.",
+    "loudnessFixNoise": "Em um rip de vinil pode baixar com “Ruído de fundo” em Reparo de vinil. Senão, vem da fonte ou da captura.",
     "loudnessAfterHeader": "agora → após converter",
     "copyThisFile": "A nova",
     "copyRowCutoff": "Corte",

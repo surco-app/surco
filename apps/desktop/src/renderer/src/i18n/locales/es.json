@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Bueno: menos del 0,2 %.",
     "loudnessFixDc": "Se puede corregir. Marca «Eliminar desplazamiento DC (centrar en 0,0)» en Igualar volumen (modo Sonoridad o Pico).",
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
-    "loudnessFixNoise": "No se puede corregir aquí. Surco no elimina ruido. Viene del origen o de la captura.",
+    "loudnessFixNoise": "En un rip de vinilo puede bajar con «Ruido de fondo» en Reparación de vinilo. Si no, viene del origen o de la captura.",
     "loudnessAfterHeader": "ahora → tras convertir",
     "copyThisFile": "La nueva",
     "copyRowCutoff": "Corte",

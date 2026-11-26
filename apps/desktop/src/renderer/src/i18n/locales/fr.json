@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Bon : moins de 0,2 %.",
     "loudnessFixDc": "Corrigible. Coche « Supprimer le décalage DC (centrer sur 0,0) » dans Normalisation du loudness (mode Loudness ou Pic).",
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
-    "loudnessFixNoise": "Non corrigible ici. Surco ne débruite pas. Cela vient de la source ou de la captation.",
+    "loudnessFixNoise": "Sur un rip vinyle, il peut baisser avec « Bruit de fond » dans Réparation vinyle. Sinon, il vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
     "copyThisFile": "La nouvelle",
     "copyRowCutoff": "Coupure",

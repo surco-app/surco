@@ -16,6 +16,20 @@ describe('LoudnessHelpModal', () => {
     }
   })
 
+  // The help used to say Surco never removes noise, while vinyl repair's background noise
+  // control lowers exactly the hiss this floor measures. A reader with a noisy rip gave up
+  // on a fix the app offers, so every language must point at that control by its name.
+  it('points the noise floor at vinyl repair in every language', async () => {
+    const locales = import.meta.glob<{
+      editor: { loudnessFixNoise: string }
+      declick: { title: string; noiseLabel: string }
+    }>('../i18n/locales/*.json', { eager: true, import: 'default' })
+    for (const [file, t] of Object.entries(locales)) {
+      expect(t.editor.loudnessFixNoise, file).toContain(t.declick.noiseLabel)
+      expect(t.editor.loudnessFixNoise, file).toContain(t.declick.title)
+    }
+  })
+
   // The readout tells the grades apart by shape as well as colour (round, triangle,
   // square) so a colour-blind reader can still see the verdict. The legend that explains
   // them kept three identical dots, which is the one place the shapes had to match.
