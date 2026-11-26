@@ -129,7 +129,7 @@ import {
 } from '../lib/cueSession'
 import { recordCueEdits } from '../lib/cueTasteEdits'
 import { type TwinPlan, twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
-import { quantizePoints } from '../lib/cueWave'
+import { quantizePoints, withCutFirstBeat } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
 import { ownsKeystroke } from '../lib/keymap'
@@ -621,9 +621,13 @@ function Editing({
     if (action.type !== 'select' && action.type !== 'undo') takeShortcutUndo()
     stepDraft(action)
   }, [])
+  // The cut first kick joins the beats cues are placed on, not only the ones drawn: a line the
+  // DJ sees but cannot put a cue on sent the A to the second line every time.
   const grid = useMemo(
     () =>
-      state.grid && draftGridChanged(state) ? gridBeats(state.grid, read.durationMs) : read.grid,
+      withCutFirstBeat(
+        state.grid && draftGridChanged(state) ? gridBeats(state.grid, read.durationMs) : read.grid,
+      ),
     [state, read],
   )
   const ctx = useMemo(

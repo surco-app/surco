@@ -10,6 +10,7 @@ import {
 import { foldAccents } from '../../../shared/foldAccents'
 import { type LearnTrack, learnFlowFromTrack } from '../../../shared/learnFlow'
 import type { CueWaveColumn, SourcePlaylistEntry, TrackCues } from '../../../shared/types'
+import { withCutFirstBeat } from './cueWave'
 import { parseFileName } from './filename'
 
 const BEAT_MS = 60000 / 128
@@ -82,7 +83,7 @@ export function examplePlan(flow: CueFlow): FlowOutcome {
 export function trackOfCues(read: TrackCues): FlowTrack {
   const live = read.cues.filter((c) => !c.loop)
   return {
-    beats: read.grid.map((b) => b.ms),
+    beats: withCutFirstBeat(read.grid).map((b) => b.ms),
     drops: findDrops(
       live.filter((c) => c.kind === 0).map((c) => c.ms),
       live.filter((c) => c.kind !== 0).map((c) => c.ms),
@@ -94,7 +95,7 @@ export function trackOfCues(read: TrackCues): FlowTrack {
 
 export function learnTrackOf(read: TrackCues): LearnTrack {
   return {
-    beats: read.grid.map((b) => b.ms),
+    beats: withCutFirstBeat(read.grid).map((b) => b.ms),
     cues: read.cues.filter((c) => !c.loop).map(({ ms, kind, color }) => ({ ms, kind, color })),
     strong: read.strong,
     phrases: read.phrases,

@@ -639,6 +639,22 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 
+  // A file that starts a few ms into its first kick shows that kick's line at 0, but a cue
+  // put there jumped to the second line: the line was only drawn, never offered to snap to.
+  // A DJ could neither place the A on the first downbeat by hand nor have a flow put it there.
+  it('places a cue on the line drawn at 0 for a first kick the file cut off', async () => {
+    const cut = Array.from({ length: 900 }, (_, i) => ({
+      ms: 397 + i * 403,
+      beat: ((i + 1) % 4) + 1,
+    }))
+    setup({ ...READ, grid: cut }, null, { cueQuantize: 'bar' })
+    await ready()
+    await openFull()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 0, clientY: 30 })
+    fireEvent.click(screen.getByTestId('cues-menu-add-call'))
+    expect(screen.getByTestId('cue-wave-call-0')).toBeInTheDocument()
+  })
+
   it('marks a drop from the menu and adds a lone CALL from the menu', async () => {
     setup()
     await ready()

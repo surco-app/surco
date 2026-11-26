@@ -24,7 +24,7 @@ import {
   keptDraftOn,
   unsavedCueTracks,
 } from './cueSession'
-import { quantizePoints } from './cueWave'
+import { quantizePoints, withCutFirstBeat } from './cueWave'
 import { liveCuesOf } from './liveCuesOf'
 
 export function withoutCallInBar(
@@ -76,9 +76,10 @@ async function autoMarkOne(client: QueryClient, contentId: string): Promise<Auto
   const cues =
     keptDraftOn(contentId, read, queued)?.cues ??
     (queued && queued.fingerprint === read.fingerprint ? queued.wanted : read.cues)
-  const found = dropsOnGrid(input, read.grid, await learnedTaste(client))
+  const grid = withCutFirstBeat(read.grid)
+  const found = dropsOnGrid(input, grid, await learnedTaste(client))
   if (found.length === 0) return { kind: 'none' }
-  const open = withoutCallInBar(found, cues, read.grid)
+  const open = withoutCallInBar(found, cues, grid)
   return open.length === 0 ? { kind: 'marked' } : { kind: 'proposed', proposals: open }
 }
 
@@ -125,9 +126,10 @@ async function acceptOne(
     : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
   const draftKey = cueDraftKey(target.contentId, read.fingerprint, queued)
   const manual = settings.activeCueFlow === MANUAL_CUE_FLOW
+  const grid = withCutFirstBeat(read.grid)
   const ctx = {
-    beats: read.grid.map((b) => b.ms),
-    snapTo: quantizePoints(read.grid, settings.cueQuantize),
+    beats: grid.map((b) => b.ms),
+    snapTo: quantizePoints(grid, settings.cueQuantize),
     strong: read.strong,
     phrases: read.phrases,
     flows: settings.cueFlows,
@@ -144,7 +146,7 @@ async function acceptOne(
   const flowed = manual
     ? kept
     : reduceDraft(kept, { type: 'use-flow', flowId: settings.activeCueFlow }, ctx)
-  const open = withoutCallInBar(taken, flowed.cues, read.grid)
+  const open = withoutCallInBar(taken, flowed.cues, grid)
   const actions: DraftAction[] = open.map(({ ms }) =>
     manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
   )

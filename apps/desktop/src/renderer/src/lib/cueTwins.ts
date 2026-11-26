@@ -14,7 +14,7 @@ import {
 } from './cueDraft'
 import { CUE_PROGRAMS } from './cuePrograms'
 import { unsavedCueTracks } from './cueSession'
-import { quantizePoints } from './cueWave'
+import { quantizePoints, withCutFirstBeat } from './cueWave'
 
 export interface CarriedBreaks {
   flowId: string
@@ -107,9 +107,10 @@ export function carriedBreaks(draft: CueDraft, ctx: DraftContext): CarriedBreaks
 // A break lands on the other program's nearest beat, never its nearest bar: the programs can
 // count the bar from different beats, and the bar would move every cue by a beat or more.
 function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings): DraftContext {
+  const grid = withCutFirstBeat(read.grid)
   return {
-    beats: read.grid.map((b) => b.ms),
-    snapTo: quantizePoints(read.grid, 'beat'),
+    beats: grid.map((b) => b.ms),
+    snapTo: quantizePoints(grid, 'beat'),
     strong: read.strong,
     phrases: read.phrases,
     flows: settings.cueFlows,

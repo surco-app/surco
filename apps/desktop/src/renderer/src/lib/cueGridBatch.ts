@@ -13,7 +13,7 @@ import {
   keepGridAdjust,
   keptOnSurcoGrid,
 } from './cueSession'
-import { quantizePoints } from './cueWave'
+import { quantizePoints, withCutFirstBeat } from './cueWave'
 import { adjustGrid } from './gridAdjust'
 import { auditCheckOf } from './gridAuditCheck'
 import { gridGate } from './gridGate'
@@ -58,12 +58,13 @@ async function adjustOne(
   if (draft.grid === null) return { kind: 'unmeasured' }
   const gridded = { ...draft, grid: draft.grid }
   const grid = applied.changed ? gridBeats(gridded.grid, read.durationMs) : read.grid
+  const placed = withCutFirstBeat(grid)
   const result = await adjustGrid({
     draft: gridded,
     beats: grid.map((b) => b.ms),
     ctx: {
-      beats: grid.map((b) => b.ms),
-      snapTo: quantizePoints(grid, settings.cueQuantize),
+      beats: placed.map((b) => b.ms),
+      snapTo: quantizePoints(placed, settings.cueQuantize),
       strong: read.strong,
       phrases: read.phrases,
       flows: settings.cueFlows,

@@ -254,6 +254,23 @@ describe('accepting Auto marcar over several tracks', () => {
     expect(api.cues.save).not.toHaveBeenCalled()
   })
 
+  // Same rule as the editor: a first kick the file cut off counts as the first beat, so the
+  // cue 16 bars before a drop on bar 17 lands on it from the list too, not one beat later.
+  it('counts the bars from a first kick the file cut off, as the editor does', async () => {
+    const cut = Array.from({ length: 900 }, (_, i) => ({
+      ms: 397 + i * 403,
+      beat: ((i + 1) % 4) + 1,
+    }))
+    const drop = 64 * 403
+    dropProposals.mockReturnValue(found(drop))
+    const { client } = setup({ reads: { '103': { ...READ, grid: cut } } })
+    await autoMarkTracks(client, ['103'])
+
+    await acceptAutoMarks(client, [target('103')], settings(MIX_IN.id))
+
+    expect(draftsToSave()[0].wanted.map((c) => c.ms)).toContain(0)
+  })
+
   it('places the cues of the flow picked for the batch, not a fixed one', async () => {
     dropProposals.mockReturnValue(found(bar(64)))
     const { client } = setup()
