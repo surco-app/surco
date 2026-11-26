@@ -200,6 +200,27 @@ export type GridAuditRun = Pick<GridAudit, 'windows' | 'total'> & {
 const AUDIT_WINDOW_BEATS = 16
 const AUDIT_STEP_BEATS = 8
 
+// An intro or outro with no kick still has hats, bass and percussion, often played a little
+// behind the beat: measured there, a grid that sits on the kick reads as laid early and Auto
+// looks wrong. The kick is the clock a DJ mixes on, so a window only judges the grid when its
+// lows rise at least half as sharply as in the track's typical window (each track has its
+// own kick). A window without one is not a beat Surco failed to hear, so it leaves the total.
+const KICK_EDGE_HZ = 120
+const KICK_RISE_SHARE = 0.5
+
+function lowBand(pcm: Float32Array, sampleRate: number): Float32Array {
+  const a = 1 - Math.exp((-2 * Math.PI * KICK_EDGE_HZ) / sampleRate)
+  const out = new Float32Array(pcm.length)
+  let once = 0
+  let twice = 0
+  for (let i = 0; i < pcm.length; i++) {
+    once += a * (pcm[i] - once)
+    twice += a * (once - twice)
+    out[i] = twice
+  }
+  return out
+}
+
 export function auditGrid(
   pcm: Float32Array,
   sampleRate: number,
@@ -207,16 +228,18 @@ export function auditGrid(
   leadMs: number,
 ): Pick<GridAudit, 'windows' | 'total'> {
   const levels = energy(pcm, FINE_HOP)
+  const lows = energy(lowBand(pcm, sampleRate), FINE_HOP)
   const msPerFrame = (FINE_HOP / sampleRate) * 1000
   let total = 0
   for (const l of levels) total += l
   const loud = (total / Math.max(1, levels.length)) * SILENT_WINDOW_RATIO
   const reach = (2 * FINE_BINS) / BINS
-  const windows: GridAudit['windows'] = []
+  const heard: (GridAudit['windows'][number] & { kick: number })[] = []
   let count = 0
   for (let i = 0; i + AUDIT_WINDOW_BEATS < beatsMs.length; i += AUDIT_STEP_BEATS) {
     count++
     const sum = new Float64Array(FINE_BINS)
+    const lowSum = new Float64Array(FINE_BINS)
     const hits = new Float64Array(FINE_BINS)
     let level = 0
     let frames = 0
@@ -229,21 +252,25 @@ export function auditGrid(
         const bin = Math.floor(((f * msPerFrame + leadMs - beat) / period + 0.5) * FINE_BINS)
         if (bin < 0 || bin >= FINE_BINS) continue
         sum[bin] += levels[f]
+        lowSum[bin] += lows[f]
         hits[bin]++
         level += levels[f]
         frames++
       }
     }
     if (frames === 0 || level / frames < loud) continue
-    const mean = (bin: number): number => {
-      const at = ((bin % FINE_BINS) + FINE_BINS) % FINE_BINS
-      return Math.log(sum[at] / (hits[at] || 1) + LEVEL_FLOOR)
+    const risesOf = (sums: Float64Array): number[] => {
+      const mean = (bin: number): number => {
+        const at = ((bin % FINE_BINS) + FINE_BINS) % FINE_BINS
+        return Math.log(sums[at] / (hits[at] || 1) + LEVEL_FLOOR)
+      }
+      return Array.from({ length: FINE_BINS }, (_, b) => {
+        let rise = 0
+        for (let k = 1; k <= reach; k++) rise += mean(b + k) - mean(b - k)
+        return rise
+      })
     }
-    const rises = Array.from({ length: FINE_BINS }, (_, b) => {
-      let rise = 0
-      for (let k = 1; k <= reach; k++) rise += mean(b + k) - mean(b - k)
-      return rise
-    })
+    const rises = risesOf(sum)
     const steepest = rises.indexOf(Math.max(...rises))
     const best = hitStart(rises, steepest)
     const apart = (a: number, b: number) => {
@@ -262,12 +289,19 @@ export function auditGrid(
     const period = (beatsMs[i + AUDIT_WINDOW_BEATS] - beatsMs[i]) / AUDIT_WINDOW_BEATS
     const phase = (best + 0.5) / FINE_BINS - 0.5
     const folded = Math.abs(phase) > 0.25 ? phase - Math.sign(phase) * 0.5 : phase
-    windows.push({
+    heard.push({
       ms: beatsMs[i + AUDIT_WINDOW_BEATS / 2],
       offsetMs: folded * period + REKORDBOX_BEAT_AFTER_RISE_MS,
+      kick: Math.max(...risesOf(lowSum)),
     })
   }
-  return { windows, total: count }
+  const kicks = heard.map((w) => w.kick).sort((a, b) => a - b)
+  const typical = kicks[kicks.length >> 1] ?? 0
+  const kicked = heard.filter((w) => w.kick >= KICK_RISE_SHARE * typical)
+  return {
+    windows: kicked.map(({ ms, offsetMs }) => ({ ms, offsetMs })),
+    total: count - (heard.length - kicked.length),
+  }
 }
 
 export function provisionalGrid(

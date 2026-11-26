@@ -236,6 +236,37 @@ describe('auditGrid', () => {
     expect(audit.windows.length).toBeLessThan(audit.total * 0.25)
   })
 
+  const kicklessIntro = (introMs: number): Float32Array => {
+    const pcm = danceTrack(140, 250, 120)
+    const period = 60 / 140
+    let noise = 7
+    for (let i = 0; i < pcm.length; i++) {
+      const pad = 0.1 * Math.sin((2 * Math.PI * 1000 * i) / SR)
+      if (i >= (SR * introMs) / 1000) {
+        pcm[i] += pad
+        continue
+      }
+      const t = i / SR - 0.25 - 0.015
+      const inBeat = ((t % period) + period) % period
+      noise = (noise * 16807) % 2147483647
+      const bass = 0.3 * Math.sin((2 * Math.PI * 45 * i) / SR)
+      pcm[i] = pad + bass + 2 * (noise / 2147483647 - 0.5) * Math.exp(-inBeat * 80)
+    }
+    return pcm
+  }
+
+  it('judges nothing in an intro with no kick, so percussion played behind the beat never reads as a grid laid early', () => {
+    const audit = auditGrid(kicklessIntro(40000), SR, programGrid(140, 250, 120, 0), 0)
+    expect(audit.windows.filter((w) => w.ms < 40000 - 2500)).toEqual([])
+    expect(audit.windows.filter((w) => w.ms > 40000 + 2500).length).toBeGreaterThan(15)
+    expect(audit.windows.every((w) => Math.abs(w.offsetMs) <= 2)).toBe(true)
+  })
+
+  it('does not count an intro with no kick as beats it failed to hear, so a long one never leaves the track unmeasured', () => {
+    const audit = auditGrid(kicklessIntro(40000), SR, programGrid(140, 250, 120, 0), 0)
+    expect(audit.windows.length).toBeGreaterThan(audit.total * 0.8)
+  })
+
   it('measures a grid at its own tempo, so a tempo Surco hears wrong cannot make a good grid look bad', () => {
     const audit = auditGrid(danceTrack(160, 250, 120), SR, programGrid(160, 250, 120, 0), 0)
     expect(audit.windows.length).toBeGreaterThan(audit.total * 0.8)
