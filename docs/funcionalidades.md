@@ -3683,7 +3683,7 @@ como valor entero (los géneros con varios valores se saltan) y título solo por
 invisibles (`musicSpelling.ts:120-135`). Cuatro tipos: invisibles, mayúsculas y acentos
 (NFC incluido), signos y espacios, y posible errata. Los tres primeros son seguros y la
 grafía mayoritaria va marcada; en empate no se marca ninguna. **Una errata nunca entra sola
-en la tanda** (`SAFE_KINDS`, `musicSpelling.ts:18`): es una sola edición (Damerau) entre
+en la tanda**: es una sola edición (Damerau) entre
 nombres de 8 letras o más con los mismos dígitos, y nunca en género ni título
 (`musicSpelling.ts:77`, `:98-102`, `:259`). Medido sobre una biblioteca real: por debajo de
 8 letras casi todos los pares eran artistas distintos.
