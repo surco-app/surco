@@ -63,7 +63,7 @@
           {
             "t": "Any format to any",
             "s": "AIFF, WAV, FLAC, ALAC and MP3 in any direction, and it also reads M4A, AAC, OGG and OPUS.",
-            "d": "AIFF, WAV, FLAC, ALAC or MP3, in any direction. FLAC to MP3 so it fits on the USB stick, WAV to AIFF to carry the artwork, MP3 to whatever your DJ app asks for. It also reads M4A, AAC, OGG and OPUS. An M4A can stay as it is; the other three always transcode."
+            "d": "AIFF, WAV, FLAC, ALAC or MP3, in any direction. FLAC to MP3 so it fits on the USB stick, WAV to AIFF to carry the artwork, MP3 to whatever your DJ app asks for. It also reads M4A, AAC, OGG and OPUS. An M4A can stay as it is; the other three always transcode. A track from Apple Music or a DJ program converts to its own format, not the one in Settings."
           },
           {
             "t": "No re-encode when it isn't needed",
@@ -115,7 +115,7 @@
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz, Apple Music",
             "s": "Finds artist, album, year, BPM, key, label and catalogue number across six sources.",
-            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs, Beatport and MusicBrainz, and Beatport adds the mix and the ISRC."
+            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs, Beatport and MusicBrainz, and Beatport adds the mix and the ISRC. When nothing on Discogs matches by artist and title, Surco tries the album in the tags."
           },
           {
             "t": "Matches a whole release",
@@ -237,7 +237,7 @@
           {
             "t": "What you already have",
             "s": "Finds a track in every DJ program you use and in Apple Music, and tells you which copy is better.",
-            "d": "In the editor, “In your library” shows each copy of a track from Tracks in your DJ programs and in Apple Music. Each one says if it is the same, better, worse or another version, and a row opens to compare both spectra. The “Better than Music” filter leaves only what sounds better than your Apple Music copy."
+            "d": "In the editor, “In your library” shows each copy of a track from Tracks in your DJ programs and in Apple Music. Each one says if it is the same, better, worse or another version, and a row opens to compare both spectra. The “Better than Music” filter leaves only what sounds better than your Apple Music copy. If a track is already in your library, in Apple Music or a DJ program, the editor recognises it. You can add that copy to playlists or take it out from the editor, and undo it. Empty fields fill in with what your copy already has, grouping and cover included, even when it is another version of the same recording."
           },
           {
             "t": "Bits, checked",
@@ -304,7 +304,7 @@
           {
             "t": "Traktor cue points",
             "s": "Traktor cue points survive any conversion.",
-            "d": "Intact across MP3, AIFF, FLAC and WAV, in any combination. Trim and the grid re-anchors by phase."
+            "d": "Intact across MP3, AIFF, FLAC and WAV, in any combination. Trim and the grid re-anchors by phase. And they stay put when you save a track."
           },
           {
             "t": "Mixed In Key cues, and the MP3 offset",
@@ -346,7 +346,7 @@
           {
             "t": "Replaces what you already have",
             "s": "A better copy takes the old one’s place in Apple Music and your DJ programs, cues included.",
-            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one’s place in Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, instead of leaving you with two. The track stays in its playlists, and its cues move with the audio when the new copy starts a little earlier or later. Every replaced track waits in “To review” until you check it. In Apple Music it keeps its play count and your rating. Serato keeps it in its crates but loses its stars. The Apple Music badge shows what format your copy is in, so you know whether it’s worth it."
+            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one’s place in Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, instead of leaving you with two. The track stays in its playlists, and its cues move with the audio when the new copy starts a little earlier or later. Every replaced track waits in “To review” until you check it. In Apple Music it keeps its play count and your rating. Serato keeps it in its crates but loses its stars. The Apple Music badge shows what format your copy is in, so you know whether it’s worth it. If you only want new tags, “Update” rewrites them on your copy without touching its audio. A conversion that lands next to a copy a DJ program already had also waits in “To review”."
           },
           {
             "t": "Typos and duplicates in your library",

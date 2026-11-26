@@ -63,7 +63,7 @@
           {
             "t": "Da qualsiasi formato a qualsiasi formato",
             "s": "AIFF, WAV, FLAC, ALAC e MP3 in qualsiasi direzione, e legge anche M4A, AAC, OGG e OPUS.",
-            "d": "AIFF, WAV, FLAC, ALAC o MP3, in qualsiasi direzione. Da FLAC a MP3 perché entri nella chiavetta USB, da WAV ad AIFF per portarti dietro la copertina, da MP3 a quello che chiede il tuo programma. Legge anche M4A, AAC, OGG e OPUS. Un M4A può restare così com'è, gli altri tre vengono sempre transcodificati."
+            "d": "AIFF, WAV, FLAC, ALAC o MP3, in qualsiasi direzione. Da FLAC a MP3 perché entri nella chiavetta USB, da WAV ad AIFF per portarti dietro la copertina, da MP3 a quello che chiede il tuo programma. Legge anche M4A, AAC, OGG e OPUS. Un M4A può restare così com'è, gli altri tre vengono sempre transcodificati. Un brano di Apple Music o di un programma DJ viene convertito nel suo formato, non in quello delle Impostazioni."
           },
           {
             "t": "Niente ricodifica se non serve",
@@ -115,7 +115,7 @@
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music",
             "s": "Cerca artista, album, anno, BPM, tonalità, etichetta e numero di catalogo in sei fonti.",
-            "d": "Artista, album, anno, BPM e tonalità. Etichetta e numero di catalogo arrivano da Discogs, Beatport e MusicBrainz, e Beatport aggiunge il mix e l'ISRC."
+            "d": "Artista, album, anno, BPM e tonalità. Etichetta e numero di catalogo arrivano da Discogs, Beatport e MusicBrainz, e Beatport aggiunge il mix e l'ISRC. Se su Discogs niente corrisponde per artista e titolo, Surco prova con l’album dei tag."
           },
           {
             "t": "Abbina il disco intero",
@@ -237,7 +237,7 @@
           {
             "t": "Quello che hai già",
             "s": "Trova un brano in tutti i programmi DJ che usi e in Apple Music, e ti dice quale copia è migliore.",
-            "d": "Nell’editor, «Nella tua libreria» mostra ogni copia di un brano di Tracks nei tuoi programmi DJ e in Apple Music. Ognuna dice se è uguale, migliore, peggiore o un’altra versione, e una riga si apre per confrontare i due spettri. Il filtro «Migliori che in Music» lascia solo ciò che suona meglio della tua copia in Apple Music."
+            "d": "Nell’editor, «Nella tua libreria» mostra ogni copia di un brano di Tracks nei tuoi programmi DJ e in Apple Music. Ognuna dice se è uguale, migliore, peggiore o un’altra versione, e una riga si apre per confrontare i due spettri. Il filtro «Migliori che in Music» lascia solo ciò che suona meglio della tua copia in Apple Music. Se un brano è già nella tua libreria, in Apple Music o in un programma DJ, l’editor lo riconosce. Puoi aggiungere quella copia alle playlist o toglierla dall’editor, e annullare. I campi vuoti si riempiono con quello che la tua copia ha già, raggruppamento e copertina compresi, anche se è un’altra versione della stessa registrazione."
           },
           {
             "t": "I bit, verificati",
@@ -304,7 +304,7 @@
           {
             "t": "Cue point di Traktor",
             "s": "I cue point di Traktor sopravvivono a qualsiasi conversione.",
-            "d": "Intatti tra MP3, AIFF, FLAC e WAV, in qualsiasi combinazione. Se tagli, la griglia viene riancorata per fase."
+            "d": "Intatti tra MP3, AIFF, FLAC e WAV, in qualsiasi combinazione. Se tagli, la griglia viene riancorata per fase. E non si spostano quando salvi un brano."
           },
           {
             "t": "Cue di Mixed In Key, e lo sfasamento dell'MP3",
@@ -346,7 +346,7 @@
           {
             "t": "Sostituisci quello che hai già",
             "s": "Una copia migliore prende il posto di quella vecchia in Apple Music e nei tuoi programmi DJ, con i cue.",
-            "d": "Carichi un’altra copia di un brano che hai già, in qualsiasi formato e anche nello stesso, e prende il suo posto in Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, invece di ritrovarti con due. Il brano resta nelle sue playlist, e i suoi cue si spostano con l’audio se la nuova copia inizia un po’ prima o un po’ dopo. Ogni brano sostituito aspetta in «Da rivedere» finché non lo guardi. In Apple Music conserva i suoi ascolti e la tua valutazione. Serato lo tiene nelle sue crate, ma perde le stelle. Il segno di Apple Music ti dice in che formato è la tua copia, così sai se ne vale la pena."
+            "d": "Carichi un’altra copia di un brano che hai già, in qualsiasi formato e anche nello stesso, e prende il suo posto in Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, invece di ritrovarti con due. Il brano resta nelle sue playlist, e i suoi cue si spostano con l’audio se la nuova copia inizia un po’ prima o un po’ dopo. Ogni brano sostituito aspetta in «Da rivedere» finché non lo guardi. In Apple Music conserva i suoi ascolti e la tua valutazione. Serato lo tiene nelle sue crate, ma perde le stelle. Il segno di Apple Music ti dice in che formato è la tua copia, così sai se ne vale la pena. Se vuoi cambiare solo i tag, «Aggiorna» li riscrive sulla tua copia senza toccarne l’audio. Una conversione che finisce accanto a una copia che un programma DJ aveva già aspetta anche lei in «Da rivedere»."
           },
           {
             "t": "Refusi e doppioni nella tua libreria",

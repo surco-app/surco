@@ -63,7 +63,7 @@
           {
             "t": "De qualsevol format a qualsevol altre",
             "s": "AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, i també llegeix M4A, AAC, OGG i OPUS.",
-            "d": "AIFF, WAV, FLAC, ALAC o MP3, en qualsevol direcció. De FLAC a MP3 perquè càpiga a l'USB, de WAV a AIFF per portar la caràtula, de MP3 al que demani el teu programa. A més, llegeix M4A, AAC, OGG i OPUS. Un M4A es pot quedar tal com és; els altres tres sempre es transcodifiquen."
+            "d": "AIFF, WAV, FLAC, ALAC o MP3, en qualsevol direcció. De FLAC a MP3 perquè càpiga a l'USB, de WAV a AIFF per portar la caràtula, de MP3 al que demani el teu programa. A més, llegeix M4A, AAC, OGG i OPUS. Un M4A es pot quedar tal com és; els altres tres sempre es transcodifiquen. Una pista d’Apple Music o d’un programa DJ es converteix al seu propi format, no al de Configuració."
           },
           {
             "t": "Sense recodificar si no cal",
@@ -115,7 +115,7 @@
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music",
             "s": "Cerca artista, àlbum, any, BPM, tonalitat, segell i catàleg en sis fonts.",
-            "d": "Artista, àlbum, any, BPM i tonalitat. El segell i el catàleg vénen de Discogs, Beatport i MusicBrainz, i Beatport hi afegeix el mix i l'ISRC."
+            "d": "Artista, àlbum, any, BPM i tonalitat. El segell i el catàleg vénen de Discogs, Beatport i MusicBrainz, i Beatport hi afegeix el mix i l'ISRC. Si a Discogs res no coincideix per artista i títol, Surco prova amb l’àlbum de l’etiqueta."
           },
           {
             "t": "Aparella el disc sencer",
@@ -237,7 +237,7 @@
           {
             "t": "El que ja tens",
             "s": "Troba una pista a tots els teus programes DJ i a Apple Music, i et diu quina còpia és millor.",
-            "d": "A l’editor, «A la teva biblioteca» mostra cada còpia d’una pista de Tracks als teus programes DJ i a Apple Music. Cadascuna diu si és igual, millor, pitjor o una altra versió, i una fila s’obre per comparar els dos espectres. El filtre «Millors que a Music» deixa només el que sona millor que la teva còpia d’Apple Music."
+            "d": "A l’editor, «A la teva biblioteca» mostra cada còpia d’una pista de Tracks als teus programes DJ i a Apple Music. Cadascuna diu si és igual, millor, pitjor o una altra versió, i una fila s’obre per comparar els dos espectres. El filtre «Millors que a Music» deixa només el que sona millor que la teva còpia d’Apple Music. Si una pista ja és a la teva biblioteca, a Apple Music o en un programa DJ, l’editor la reconeix. Pots posar aquesta còpia en playlists o treure-la’n des de l’editor, i desfer-ho. Els camps buits s’omplen amb el que ja té la teva còpia, també l’agrupació i la caràtula, encara que sigui una altra versió de la mateixa gravació."
           },
           {
             "t": "Els bits, comprovats",
@@ -304,7 +304,7 @@
           {
             "t": "Cue points de Traktor",
             "s": "Els cue points de Traktor sobreviuen a qualsevol conversió.",
-            "d": "Intactes entre MP3, AIFF, FLAC i WAV, en qualsevol combinació. Si retalles, la graella es torna a ancorar per fase."
+            "d": "Intactes entre MP3, AIFF, FLAC i WAV, en qualsevol combinació. Si retalles, la graella es torna a ancorar per fase. I no es mouen quan deses una pista."
           },
           {
             "t": "Cues de Mixed In Key, i el desfasament del MP3",
@@ -346,7 +346,7 @@
           {
             "t": "Substitueix el que ja tens",
             "s": "Una còpia millor ocupa el lloc de la vella a Apple Music i als teus programes DJ, amb els cues.",
-            "d": "Carregues una altra còpia d’una pista que ja tens, en qualsevol format i també en el mateix, i n’ocupa el lloc a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, en lloc d’acabar amb dues. La pista continua a les seves playlists, i els seus cues es mouen amb l’àudio si la còpia nova comença una mica abans o després. Cada pista substituïda espera a «Per revisar» fins que la mires. A Apple Music conserva les reproduccions i la teva puntuació. Serato la manté als seus crates, però perd les estrelles. La marca d’Apple Music et diu en quin format és la teva còpia, perquè sàpigues si val la pena."
+            "d": "Carregues una altra còpia d’una pista que ja tens, en qualsevol format i també en el mateix, i n’ocupa el lloc a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, en lloc d’acabar amb dues. La pista continua a les seves playlists, i els seus cues es mouen amb l’àudio si la còpia nova comença una mica abans o després. Cada pista substituïda espera a «Per revisar» fins que la mires. A Apple Music conserva les reproduccions i la teva puntuació. Serato la manté als seus crates, però perd les estrelles. La marca d’Apple Music et diu en quin format és la teva còpia, perquè sàpigues si val la pena. Si només vols canviar les etiquetes, «Actualitzar» les reescriu a la teva còpia sense tocar-ne l’àudio. Una conversió que cau al costat d’una còpia que ja tenia un programa DJ també espera a «Per revisar»."
           },
           {
             "t": "Errades i duplicats de la teva biblioteca",
