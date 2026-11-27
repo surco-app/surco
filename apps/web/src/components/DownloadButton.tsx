@@ -30,6 +30,24 @@ const primary = `inline-flex gap-2 ${btnPrimary} px-5 py-2.5`
 const altLink =
   'inline-block py-1.5 -my-1.5 text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
 
+function DownloadArrow() {
+  return (
+    <svg
+      data-testid="download-cta-lead"
+      className="size-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4v12m0 0-5-5m5 5 5-5M5 20h14" />
+    </svg>
+  )
+}
+
 // Resolves the installer for the visitor's OS from the newest published release that
 // actually carries it. A brand-new release shows up before CI finishes uploading its 12
 // assets, so picking from the releases list (not just /releases/latest) keeps the previous
@@ -203,7 +221,7 @@ export default function DownloadButton({
             className={primary}
             onClick={() => trackDownload({ href: RELEASES, os, location })}
           >
-            <span data-testid="download-cta-lead" className="size-4" aria-hidden="true" />
+            <DownloadArrow />
             {t('download.viewDownloads')}
           </a>
         ) : href ? (
@@ -212,7 +230,7 @@ export default function DownloadButton({
             className={primary}
             onClick={() => trackDownload({ href, os, location, ...(version ? { version } : {}) })}
           >
-            <span data-testid="download-cta-lead" className="size-4" aria-hidden="true" />
+            <DownloadArrow />
             {t('download.cta', { os: LABEL[os] })}
           </a>
         ) : (

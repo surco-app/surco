@@ -39,13 +39,13 @@ describe('DownloadButton leading slot', () => {
     expect(pending?.querySelector('[data-testid="download-cta-lead"]')).not.toBeNull()
   })
 
-  it('keeps an empty slot of the same size once the link has resolved, so the text does not move', async () => {
+  it('fills the slot with the download arrow Cuts puts on its button once the link has resolved, at the spinner size so the text does not move', async () => {
     const container = await render('Mozilla/5.0 (iPhone)')
     const link = container.querySelector('a[href^="https://github.com"]')
     const lead = link?.querySelector('[data-testid="download-cta-lead"]')
-    expect(lead).not.toBeNull()
+    expect(lead?.tagName.toLowerCase()).toBe('svg')
     expect(lead?.getAttribute('aria-hidden')).toBe('true')
-    expect(lead?.className).toContain('size-4')
+    expect(lead?.getAttribute('class')).toContain('size-4')
   })
 
   it('keeps the same slot when the release resolves to a platform installer', async () => {
