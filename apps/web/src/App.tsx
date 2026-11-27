@@ -50,13 +50,13 @@ export default function App() {
             </div>
           </Reveal>
           <Reveal eager>
-            <h1 className="mx-auto max-w-4xl text-[min(2.25rem,7.6vw)] leading-[1.1] font-bold tracking-tight text-balance sm:text-5xl lg:text-[4.5rem] lg:leading-[1.02]">
+            <h1 className="mx-auto max-w-2xl text-[min(2.25rem,7.6vw)] leading-[1.1] font-semibold tracking-tight text-balance sm:text-5xl sm:leading-none">
               {t('hero.h1a')} <br />
               {t('hero.h1b')}
             </h1>
           </Reveal>
           <Reveal eager delay={80}>
-            <p className="mx-auto mt-5 max-w-xl leading-relaxed text-pretty text-muted">
+            <p className="mx-auto mt-6 max-w-xl text-lg text-pretty text-muted">
               {t('home.heroLede')}
             </p>
           </Reveal>

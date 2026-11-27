@@ -14,7 +14,10 @@ export default function LatestRelease() {
       data-testid="latest-release"
       className="group inline-flex flex-wrap items-baseline justify-center gap-x-2 text-sm text-muted transition-colors hover:text-fg"
     >
-      <span className="font-semibold whitespace-nowrap text-blue">
+      <span
+        data-testid="latest-release-label"
+        className="font-mono text-xs font-medium whitespace-nowrap text-blue"
+      >
         {t('hero.latestRelease', { version: latest.version })}
       </span>
       <span aria-hidden="true" className="text-faint">
@@ -24,7 +27,7 @@ export default function LatestRelease() {
         {latest.title}{' '}
         <span
           aria-hidden="true"
-          className="inline-block text-blue transition-transform group-hover:translate-x-0.5"
+          className="inline-block text-faint transition-transform group-hover:translate-x-0.5"
         >
           →
         </span>

@@ -23,7 +23,7 @@ function Sparkline({ stats }: { stats: Stats }) {
       width={SPARK_W}
       height={SPARK_H}
       aria-hidden="true"
-      className="flex-none overflow-visible text-blue"
+      className="flex-none overflow-visible text-fg"
     >
       <polyline
         points={installs.map((count, i) => `${x(i)},${y(count)}`).join(' ')}
@@ -45,7 +45,10 @@ export function HeroStatsView({ stats }: { stats: Stats }) {
   const week = installsInLast(stats.days, 7)
 
   return (
-    <p className="inline-flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-line bg-surface/40 px-3.5 py-1.5 text-[0.8125rem] text-muted">
+    <p
+      data-testid="hero-stats-pill"
+      className="inline-flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-line px-3.5 py-1.5 text-[0.8125rem] text-faint"
+    >
       <Sparkline stats={stats} />
       <span>
         <Trans
@@ -62,7 +65,7 @@ export function HeroStatsView({ stats }: { stats: Stats }) {
               i18nKey="home.heroStatsWeek"
               values={{ count: `+${format.number(week)}` }}
               components={{
-                n: <span data-testid="hero-stats-week" className="text-green tabular-nums" />,
+                n: <span data-testid="hero-stats-week" className="text-fg tabular-nums" />,
               }}
             />
           </>
@@ -71,7 +74,7 @@ export function HeroStatsView({ stats }: { stats: Stats }) {
       <a
         href={PAGES.stats[i18n.language as Language]}
         data-testid="hero-stats-link"
-        className="inline-block py-1.5 -my-1.5 font-medium text-blue transition-colors hover:text-cyan"
+        className="inline-block py-1.5 -my-1.5 font-medium text-fg underline-offset-4 hover:underline"
       >
         {t('nav.estadisticas')} →
       </a>
