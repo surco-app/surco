@@ -21,3 +21,24 @@ describe('hero, as Cuts and Nada draw it', () => {
     expect(css).not.toMatch(/radial-gradient/)
   })
 })
+
+describe('hero screenshot', () => {
+  const frame = doc.querySelector('[data-testid="hero-frame"]')
+  const column = (el: Element | null) =>
+    (el?.className ?? '').split(/\s+/).filter((c) => /^(sm:)?(max-w-|px-)/.test(c))
+
+  it('stays inside the column the header sets, instead of breaking out past the logo and the menu', () => {
+    const header = doc.querySelector('header > div')
+    const section = visual?.closest('section') ?? null
+    expect(column(section)).toEqual(column(header))
+    for (let el = visual; el && el !== section; el = el.parentElement)
+      expect(el.className).not.toMatch(/(^|\s)(-m[xlr]-|w-\[|w-screen)/)
+  })
+
+  it('wears the rounded hairline and soft drop shadow Cuts frames its screenshots in', () => {
+    const classes = (frame?.className ?? '').split(/\s+/)
+    expect(classes).toContain('rounded-xl')
+    expect(classes).toContain('ring-line')
+    expect(frame?.className).toMatch(/shadow-\[[^\]]*var\(--color-shade\)/)
+  })
+})

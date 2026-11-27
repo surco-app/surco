@@ -52,7 +52,10 @@ export default function HeroApp({ video }: { video?: boolean }) {
 
   return (
     <div className="relative">
-      <div className="overflow-hidden rounded-xl ring-1 ring-line/60">
+      <div
+        data-testid="hero-frame"
+        className="overflow-hidden rounded-xl shadow-[0_1px_2px_color-mix(in_srgb,var(--color-shade)_12%,transparent),0_24px_48px_-24px_color-mix(in_srgb,var(--color-shade)_50%,transparent)] ring-1 ring-line"
+      >
         <div className="group relative">
           <img
             src={shot}
