@@ -8,6 +8,9 @@ import { toggleTheme } from '../lib/theme'
 import { btnPrimary, pressFeedback } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
+const GLYPH_POP =
+  'transition-[opacity,scale,filter] duration-200 ease-out starting:scale-25 starting:opacity-0 starting:blur-xs motion-reduce:starting:scale-100 motion-reduce:starting:blur-none'
+
 const FLOATING_SHADOW = 'shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]'
 
 // `page` marks which standalone page renders the header; section links then
@@ -149,18 +152,12 @@ export default function Header({
           scale either: shrinking it about its centre pulled the logo off the page's
           left edge. Only the background changes on scroll. */}
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-10">
-        <a href={page ? home : '#top'} className="flex items-center gap-2">
+        <a href={page ? home : '#top'} className="flex items-center gap-3">
           {/* The disc cropped to its rim, not the app icon: the icon keeps the margin macOS
               asks of a Dock tile, which held the disc to 36 of these 48px, and its dark rim
               melted into the page so only the blue label read. Here the rim is lifted. */}
-          <img
-            src="/logo.svg"
-            alt=""
-            width={48}
-            height={48}
-            className="h-10 w-10 sm:h-12 sm:w-12"
-          />
-          <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>
+          <img src="/logo.svg" alt="" width={36} height={36} className="size-9" />
+          <span className="font-semibold">Surco</span>
         </a>
         <div className="flex items-center gap-4 sm:gap-7">
           <nav
@@ -192,7 +189,7 @@ export default function Header({
             data-testid="theme-toggle"
             aria-label={t('nav.theme')}
             onClick={toggleTheme}
-            className={`grid size-9 place-items-center rounded-full text-muted ${pressFeedback} hover:text-fg`}
+            className={`grid size-8 place-items-center rounded-md text-faint ${pressFeedback} hover:bg-surface hover:text-fg`}
           >
             <svg
               width="18"
@@ -203,7 +200,7 @@ export default function Header({
               strokeWidth="1.8"
               strokeLinecap="round"
               aria-hidden="true"
-              className="light:hidden"
+              className={`light:hidden ${GLYPH_POP}`}
             >
               <circle cx="12" cy="12" r="4" />
               <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
@@ -218,7 +215,7 @@ export default function Header({
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
-              className="hidden light:block"
+              className={`hidden light:block ${GLYPH_POP}`}
             >
               <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
             </svg>
@@ -364,7 +361,7 @@ export default function Header({
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
-            className={`flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted ${pressFeedback} hover:border-blue/50 hover:text-fg lg:hidden`}
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-line text-muted ${pressFeedback} hover:bg-surface hover:text-fg lg:hidden`}
           >
             {open ? (
               <svg
