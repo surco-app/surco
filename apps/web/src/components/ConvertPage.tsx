@@ -227,7 +227,7 @@ export default function ConvertPage({ page }: { page: Page }) {
           </ol>
           <a
             href={PAGES.guide[lang]}
-            className="mt-6 inline-block text-sm text-blue transition-colors hover:text-cyan"
+            className="mt-6 inline-block text-sm text-fg underline-offset-4 hover:underline font-medium"
           >
             {t(`${page}.steps.guide`)} →
           </a>

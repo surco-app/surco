@@ -68,7 +68,7 @@ export function UseCaseOutro() {
         target="_blank"
         rel="noopener noreferrer"
         data-testid="use-case-outro-request"
-        className="mt-3 inline-block text-sm font-semibold text-blue transition-colors hover:text-cyan"
+        className="mt-3 inline-block text-sm font-medium text-fg underline-offset-4 hover:underline"
       >
         {t('useCases.requestCase')}
       </a>
@@ -304,7 +304,7 @@ export default function UseCasePage({ id }: { id: string }) {
                       {i > 0 && ' · '}
                       <a
                         href={`${guideHref}#${r.anchor}`}
-                        className="text-blue transition-colors hover:text-cyan"
+                        className="text-fg underline-offset-4 hover:underline font-medium"
                       >
                         {r.label}
                       </a>

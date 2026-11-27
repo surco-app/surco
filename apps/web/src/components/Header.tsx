@@ -288,7 +288,7 @@ export default function Header({
                     data-testid="language-offer-switch"
                     href={languageHref(offered)}
                     onClick={switchLanguage(offered)}
-                    className="font-semibold text-blue transition-colors hover:text-cyan"
+                    className="font-medium text-fg underline-offset-4 hover:underline"
                   >
                     {t('nav.languageOffer.switch', { lng: offered })}
                   </a>

@@ -139,14 +139,14 @@ export default function UseCases() {
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="use-case-request"
-                      className="text-sm font-semibold text-blue transition-colors hover:text-cyan"
+                      className="text-sm font-medium text-fg underline-offset-4 hover:underline"
                     >
                       {t('useCases.requestCase')}
                     </a>
                     <button
                       type="button"
                       onClick={() => filterBy({ query: '', source: null })}
-                      className="text-sm text-muted transition-colors hover:text-cyan"
+                      className="text-sm text-muted transition-colors hover:text-fg"
                     >
                       {t('useCases.clearFilters')}
                     </button>

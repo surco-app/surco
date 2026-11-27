@@ -80,3 +80,24 @@ describe('headings across the site, on the family type scale', () => {
     }
   })
 })
+
+describe('text links, styled as the family styles them', () => {
+  const root = join(import.meta.dirname)
+  const sources = (readdirSync(root, { recursive: true }) as string[])
+    .filter((f) => f.endsWith('.tsx') && !f.startsWith('components/scenes/'))
+    .map((f) => [f, readFileSync(join(root, f), 'utf8')] as const)
+
+  it('draws links in ink with an underline on hover, keeping Surco blue for the one accent', () => {
+    const blueLinks = sources.flatMap(([file, code]) =>
+      [...code.matchAll(/className="([^"]*)"/g)]
+        .map((m) => m[1])
+        .filter(
+          (cls) =>
+            /hover:text-cyan/.test(cls) ||
+            (/(^|\s)text-blue(\s|$)/.test(cls) && /hover:underline/.test(cls)),
+        )
+        .map((cls) => `${file}: ${cls}`),
+    )
+    expect(blueLinks).toEqual([])
+  })
+})

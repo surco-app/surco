@@ -216,7 +216,7 @@ export default function App() {
                       <a
                         href={statsHref}
                         data-testid="home-closing-stats"
-                        className="font-medium text-blue transition-colors hover:text-cyan"
+                        className="font-medium text-fg underline-offset-4 hover:underline"
                       >
                         {t('nav.estadisticas')}
                       </a>
