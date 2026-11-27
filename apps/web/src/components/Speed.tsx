@@ -56,7 +56,7 @@ export default function Speed() {
       <Reveal>
         <div id={SCENE_ANCHORS.speed} className="scroll-mt-8 text-center">
           <div className="group/title mx-auto max-w-2xl text-balance">
-            <h2 className="inline text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
+            <h2 className="inline text-2xl font-semibold tracking-tight text-balance">
               {t('home.speed.title')}
             </h2>
             <AnchorLink id={SCENE_ANCHORS.speed} />

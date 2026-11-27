@@ -10,9 +10,7 @@ export default function Faq() {
   return (
     <section id="faq" className="scroll-mt-24 pb-24">
       <Kicker>{t('faq.kicker')}</Kicker>
-      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-        {t('faq.title')}
-      </h2>
+      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">{t('faq.title')}</h2>
       <div className="mt-10 grid gap-x-12 md:grid-cols-2">
         {items.map((item) => (
           <details key={item.q} className="group border-b border-line/60 py-4">

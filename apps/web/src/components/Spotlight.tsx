@@ -28,7 +28,7 @@ export default function Spotlight({
       <Reveal>
         <div id={id} className="scroll-mt-8 text-center">
           <div className="group/title mx-auto max-w-3xl text-balance">
-            <h2 className="inline text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
+            <h2 className="inline text-2xl font-semibold tracking-tight text-balance">
               {t(`home.${copy}.title`)}
             </h2>
             <AnchorLink id={id} />

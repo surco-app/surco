@@ -58,7 +58,7 @@ export default function UseCases() {
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('useCases.kicker')}</Kicker>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('useCases.title')}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('useCases.lede')}</p>

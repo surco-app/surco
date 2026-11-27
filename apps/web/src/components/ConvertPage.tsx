@@ -114,7 +114,7 @@ export default function ConvertPage({ page }: { page: Page }) {
       <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="grid items-center gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.1fr_1fr]">
           <Reveal eager>
-            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t(`${page}.h1a`)} {t(`${page}.h1b`)}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t(`${page}.lede`)}</p>
@@ -159,7 +159,7 @@ export default function ConvertPage({ page }: { page: Page }) {
 
         <section className="py-16 sm:py-20">
           <Kicker>{t(`${page}.carry.kicker`)}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.carry.title`)}
           </h2>
           <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.carry.lede`)}</p>
@@ -196,7 +196,7 @@ export default function ConvertPage({ page }: { page: Page }) {
 
         <section className="py-16 sm:py-20">
           <Kicker>{t(`${page}.why.kicker`)}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.why.title`)}
           </h2>
           <div className="mt-8 grid gap-8 md:grid-cols-3">
@@ -211,7 +211,7 @@ export default function ConvertPage({ page }: { page: Page }) {
 
         <section className="py-16 sm:py-20">
           <Kicker>{t(`${page}.steps.kicker`)}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.steps.title`)}
           </h2>
           <ol className="mt-8 grid gap-5 md:grid-cols-3">
@@ -235,7 +235,7 @@ export default function ConvertPage({ page }: { page: Page }) {
 
         <section className="py-16 sm:py-20">
           <Kicker>{t(`${page}.quality.kicker`)}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.quality.title`)}
           </h2>
           <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.quality.lede`)}</p>
@@ -257,7 +257,7 @@ export default function ConvertPage({ page }: { page: Page }) {
 
         <section className="py-16 sm:py-20">
           <Kicker>{t(`${page}.faq.kicker`)}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.faq.title`)}
           </h2>
           <div className="mt-8">
@@ -281,10 +281,7 @@ export default function ConvertPage({ page }: { page: Page }) {
         </section>
 
         <nav aria-labelledby="convert-more" className="py-16 sm:py-20">
-          <h2
-            id="convert-more"
-            className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
-          >
+          <h2 id="convert-more" className="text-2xl font-semibold tracking-tight text-balance">
             {t('footer.convertMore')}
           </h2>
           <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -303,7 +300,7 @@ export default function ConvertPage({ page }: { page: Page }) {
         </nav>
 
         <section className="py-20 text-center sm:py-24">
-          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-balance">
             {t(`${page}.outro.title`)}
           </h2>
           <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

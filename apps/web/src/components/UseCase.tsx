@@ -59,7 +59,7 @@ export function UseCaseOutro() {
   const { t } = useTranslation()
   return (
     <section className="py-20 text-center sm:py-24">
-      <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+      <h2 className="text-2xl font-semibold tracking-tight text-balance">
         {t('useCases.outroTitle')}
       </h2>
       <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">{t('useCases.outroLede')}</p>
@@ -196,7 +196,7 @@ export default function UseCasePage({ id }: { id: string }) {
               <div className="mt-8">
                 <Kicker>{group?.title}</Kicker>
               </div>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
                 {c.title}
               </h1>
               {c.macOnly && (

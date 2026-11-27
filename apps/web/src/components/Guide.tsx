@@ -140,7 +140,7 @@ export default function Guide() {
           <section className="pt-12 pb-4 sm:pt-16">
             <Reveal eager>
               <Kicker>{t('guide.kicker')}</Kicker>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
                 {t('guide.title')}
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('guide.lede')}</p>
@@ -211,7 +211,7 @@ export default function Guide() {
           ))}
 
           <section className="py-20 text-center sm:py-24">
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <h2 className="text-2xl font-semibold tracking-tight text-balance">
               {t('guide.outroTitle')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

@@ -97,7 +97,7 @@ export default function Changelog() {
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('changelog.kicker')}</Kicker>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('changelog.title')}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
@@ -118,7 +118,7 @@ export default function Changelog() {
             </Reveal>
             <Reveal eager>
               <div className="max-w-2xl rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{beta.title}</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">{beta.title}</h2>
                 <ItemList items={beta.items} />
                 <p className="mt-6 text-sm leading-relaxed text-faint">{beta.how}</p>
               </div>
@@ -144,7 +144,7 @@ export default function Changelog() {
             </Reveal>
             <Reveal eager>
               <div className="max-w-2xl">
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">{r.title}</h2>
                 <ReleaseItems items={r.items} />
               </div>
             </Reveal>
@@ -187,7 +187,7 @@ export default function Changelog() {
         )}
 
         <section className="py-20 text-center sm:py-24">
-          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-balance">
             {t('changelog.outroTitle')}
           </h2>
           <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

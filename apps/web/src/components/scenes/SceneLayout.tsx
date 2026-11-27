@@ -35,15 +35,7 @@ export default function SceneLayout({
       <Reveal>
         <div className="lg:grid lg:grid-cols-2 lg:items-end lg:gap-16">
           <div className="group/title text-balance">
-            <h2
-              className={`inline font-semibold tracking-tight text-balance ${
-                field
-                  ? 'text-[min(2.25rem,7.6vw)] sm:text-6xl'
-                  : 'text-[min(1.875rem,6.15vw)] sm:text-4xl'
-              }`}
-            >
-              {title}
-            </h2>
+            <h2 className="inline text-2xl font-semibold tracking-tight text-balance">{title}</h2>
             <AnchorLink id={id} />
           </div>
           <div

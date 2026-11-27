@@ -1,7 +1,7 @@
 export function BlockHeading({ title, lede }: { title: string; lede?: string }) {
   return (
     <>
-      <h2 className="mt-14 border-t border-line pt-8 text-2xl font-semibold tracking-tight text-balance text-fg sm:text-3xl">
+      <h2 className="mt-14 border-t border-line pt-8 text-2xl font-semibold tracking-tight text-balance text-fg">
         {title}
       </h2>
       {lede && (

@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
@@ -46,5 +48,35 @@ describe('header, sized like Cuts and Nada', () => {
     const menu = classes(doc.querySelector('[data-testid="header-menu-toggle"]'))
     expect(menu).toContain('rounded-lg')
     expect(menu).not.toContain('rounded-full')
+  })
+})
+
+describe('headings across the site, on the family type scale', () => {
+  const root = join(import.meta.dirname)
+  const sources = (readdirSync(root, { recursive: true }) as string[])
+    .filter((f) => f.endsWith('.tsx') && !/^components\/scenes\/(?!SceneLayout)/.test(f))
+    .map((f) => [f, readFileSync(join(root, f), 'utf8')] as const)
+  const headings = (level: 1 | 2) =>
+    sources.flatMap(([file, code]) =>
+      [...code.matchAll(new RegExp(`<h${level}\\b[^>]*?className=\\{?[\`"]([^\`"]*)`, 'g'))].map(
+        (m) => [file, m[1]] as const,
+      ),
+    )
+
+  it('sets every page headline in semibold, the weight Cuts and Nada use, never bold', () => {
+    expect(headings(1).length).toBeGreaterThan(0)
+    for (const [file, cls] of headings(1)) {
+      expect(cls, file).toContain('font-semibold')
+      expect(cls, file).not.toContain('font-bold')
+    }
+  })
+
+  it('keeps section headings at the family 2xl, so none rivals the page headline', () => {
+    expect(headings(2).length).toBeGreaterThan(0)
+    for (const [file, cls] of headings(2)) {
+      if (cls.includes('text-lg')) continue
+      expect(cls.split(/\s+/), file).toContain('text-2xl')
+      expect(cls, file).not.toMatch(/sm:text-[3-6]xl|text-\[min/)
+    }
   })
 })

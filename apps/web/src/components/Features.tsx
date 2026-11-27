@@ -48,7 +48,7 @@ export default function Features() {
         <section className="pt-16 pb-8 sm:pt-24">
           <Reveal eager>
             <Kicker>{t('features.kicker')}</Kicker>
-            <h1 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('features.title')}
             </h1>
             <p className="mt-4 max-w-2xl leading-relaxed text-pretty text-muted">
@@ -119,7 +119,7 @@ export default function Features() {
                   className="scroll-mt-24 pt-16"
                 >
                   <Kicker>{t('features.programs.kicker')}</Kicker>
-                  <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                  <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance">
                     {t('features.programs.title')}
                   </h2>
                   <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-subtle">
@@ -141,7 +141,7 @@ export default function Features() {
           <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
             <div>
               <Kicker>{t('shortcuts.kicker')}</Kicker>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
                 {t('shortcuts.title')}
               </h2>
               <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>
