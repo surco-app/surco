@@ -79,7 +79,7 @@ describe('header download button', () => {
   it('fades in with opacity and translate instead of a hard cut', async () => {
     const container = await renderOfferedHeader()
     const cta = container.querySelector('[data-testid="header-download"]')
-    expect(cta?.className).toContain('transition-[opacity,translate,visibility,filter,scale]')
+    expect(cta?.className).toContain('transition-[opacity,translate,visibility,scale]')
     expect(cta?.className).toContain('motion-reduce:transition-[opacity,visibility]!')
   })
 })

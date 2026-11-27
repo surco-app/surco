@@ -26,7 +26,7 @@ const LABEL: Record<OS, string> = {
   unknown: '',
 }
 
-const primary = `inline-flex gap-2 ${btnPrimary} px-7 py-3 text-sm`
+const primary = `inline-flex gap-2 ${btnPrimary} px-5 py-2.5`
 const altLink =
   'inline-block py-1.5 -my-1.5 text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
 
@@ -171,7 +171,7 @@ export default function DownloadButton({
             aria-disabled="true"
             aria-busy="true"
             data-testid="download-cta-pending"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-lg bg-surface px-5 py-2.5 font-medium text-muted ring-1 ring-line"
           >
             <svg
               data-testid="download-cta-lead"
@@ -221,7 +221,7 @@ export default function DownloadButton({
             disabled
             aria-disabled="true"
             aria-busy="true"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-lg bg-surface px-5 py-2.5 font-medium text-muted ring-1 ring-line"
           >
             <svg
               data-testid="download-cta-lead"

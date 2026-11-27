@@ -36,8 +36,11 @@ describe('flat, like the app', () => {
     expect(css).not.toMatch(/\.grain\b|--inset-shadow-edge/)
   })
 
-  it('keeps the primary button a flat brand fill, without a gradient, a glow or a lift', () => {
-    expect(btnPrimary).toMatch(/\bbg-blue\b/)
+  it("keeps the primary button the family's flat ink fill, without a gradient, a glow or a lift", () => {
+    const utilities = btnPrimary.split(/\s+/)
+    for (const utility of ['bg-fg', 'text-bg', 'rounded-lg', 'font-medium', 'active:scale-[0.97]'])
+      expect(utilities).toContain(utility)
+    expect(btnPrimary).not.toMatch(/bg-blue|rounded-full/)
     expect(btnPrimary).not.toMatch(/gradient|from-|to-cyan/)
     expect(btnPrimary).not.toMatch(/shadow-|-translate-y/)
   })

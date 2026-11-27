@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { btnPrimary } from './ui'
 
 const css = readFileSync(fileURLToPath(new URL('../index.css', import.meta.url)), 'utf8')
 const app = readFileSync(fileURLToPath(new URL('../App.tsx', import.meta.url)), 'utf8')
@@ -87,7 +88,7 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
 })
 
 // The light page is read by the same eyes: its hints and helper copy owe the same 4.5:1,
-// and the primary button's label, drawn in the page ground over the blue, has to read on it.
+// and the primary button's label, drawn in the page ground over the ink, has to read on it.
 describe('light theme contrast (WCAG 1.4.3 AA)', () => {
   for (const name of ['faint', 'muted', 'subtle', 'fg']) {
     it(`${name} clears 4.5:1 on the light page background`, () => {
@@ -103,11 +104,9 @@ describe('light theme contrast (WCAG 1.4.3 AA)', () => {
     })
   }
 
-  for (const fill of ['blue', 'cyan']) {
-    it(`the primary button label clears 4.5:1 on its ${fill} end`, () => {
-      expect(contrast(token('bg', lightCss), token(fill, lightCss))).toBeGreaterThanOrEqual(4.5)
-    })
-  }
+  it('the primary button label, in the page ground, clears 4.5:1 on its ink fill', () => {
+    expect(contrast(token('bg', lightCss), token('fg', lightCss))).toBeGreaterThanOrEqual(4.5)
+  })
 })
 
 // The scenes copy the app's window, so in light they follow the app's light theme, not an
@@ -124,9 +123,14 @@ describe('light theme follows the app it depicts', () => {
     expect(contrast(token('bg2', lightCss), token('bg', lightCss))).toBeLessThanOrEqual(1.1)
   })
 
-  it('brightens the primary button toward its cyan end in both themes, so it reads lit', () => {
-    expect(luminance(token('cyan'))).toBeGreaterThan(luminance(token('blue')))
-    expect(luminance(token('cyan', lightCss))).toBeGreaterThan(luminance(token('blue', lightCss)))
+  it('keeps the primary button label at 4.5:1 while hover fades its fill, in both themes', () => {
+    const rest = btnPrimary.match(/hover:opacity-(\d+)/)
+    expect(rest, 'hover fade not found').not.toBeNull()
+    const alpha = Number(rest?.[1]) / 100
+    for (const from of [css, lightCss])
+      expect(
+        contrast(token('bg', from), fade(token('fg', from), token('bg', from), alpha)),
+      ).toBeGreaterThanOrEqual(4.5)
   })
 
   it('casts lighter shadows on the light page, where black ones read as heavy smudges', () => {
