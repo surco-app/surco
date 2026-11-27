@@ -15,3 +15,18 @@ describe('index.css', () => {
     expect(rule).toContain('transition: none')
   })
 })
+
+describe('family typography', () => {
+  const main = readFileSync(fileURLToPath(new URL('./main.tsx', import.meta.url)), 'utf8')
+  const theme = css.slice(css.indexOf('@theme'), css.indexOf('\n}', css.indexOf('@theme')))
+
+  it('sets the site in Geist, the face Cuts and Nada share, so Surco reads as their sibling', () => {
+    expect(main).toContain("import '@fontsource-variable/geist'")
+    expect(theme).toMatch(/--font-sans:\s*"Geist Variable"/)
+  })
+
+  it('keeps meta lines, keys and code in Geist Mono, as the family does', () => {
+    expect(main).toContain("import '@fontsource-variable/geist-mono'")
+    expect(theme).toMatch(/--font-mono:\s*"Geist Mono Variable"/)
+  })
+})

@@ -35,7 +35,8 @@
   /* The ground of a spectrum image: as dark as the rendered image on the dark page; on the
      light page the page ground, which the duotone sinks the image's silence into. */
   --color-spectrum: #0c0e14;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 :root {
