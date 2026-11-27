@@ -18,7 +18,7 @@ function load({
   systemDark: boolean
   storageThrows?: boolean
 }): Page {
-  const meta = { content: '#1a1b26' as string | null }
+  const meta = { content: '#0a0a0a' as string | null }
   const documentElement = { dataset: {} as Record<string, string> }
   const document = {
     documentElement,
@@ -60,7 +60,7 @@ describe('theme script in the HTML head', () => {
   })
 
   it('tints the browser bar with the light ground, not the dark one', () => {
-    expect(load({ stored: 'light', systemDark: true }).themeColor).toBe('#e6e7ed')
-    expect(load({ stored: 'dark', systemDark: true }).themeColor).toBe('#1a1b26')
+    expect(load({ stored: 'light', systemDark: true }).themeColor).toBe('#ffffff')
+    expect(load({ stored: 'dark', systemDark: true }).themeColor).toBe('#0a0a0a')
   })
 })

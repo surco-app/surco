@@ -1,39 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #1a1b26;
-  --color-bg2: #16161e;
-  --color-surface: #24283b;
-  --color-surface2: #1f2335;
-  --color-line: #2e344b;
-  --color-highlight: #292e42;
-  /* A text field in the scenes: Tokyo Night's bg_dark, sunk below the panel as the app
-     draws it in dark; the light palette lifts it above the panel, as the app does there. */
-  --color-field: #16161e;
-  --color-edge: #737aa2;
+  --color-bg: #0a0a0a;
+  --color-bg2: #171717;
+  --color-surface: #171717;
+  --color-surface2: #171717;
+  --color-line: #1e2939;
+  --color-highlight: #262626;
+  --color-field: #171717;
+  --color-edge: #4a5565;
   --color-blue: #7aa2f7;
   --color-cyan: #7dcfff;
   --color-purple: #bb9af7;
   --color-green: #9ece6a;
   --color-red: #f7768e;
-  /* Tokyo Night's warning hue. Marks the vinyl clicks on the declick waveform,
-     where red already means "clipping" and would read as the wrong problem. */
   --color-amber: #e0af68;
-  --color-fg: #c0caf5;
-  --color-subtle: #a9b1d6;
-  --color-muted: #9aa5ce;
-  /* Lightened from #6b7396 (3.7:1, fails WCAG AA) to clear 4.5:1 on --color-bg
-     and on --color-surface, where cards put it, while staying the dimmest tier
-     below --color-muted. */
-  --color-faint: #8990b7;
-  /* The dark laid over the spectrum images, behind their axis and badge: Tokyo
-     Night's deepest ground, where Tailwind's black used to be. Same as the app. */
-  --color-scrim: #0c0e14;
-  /* The colour shadows are cast in. Near black on the dark page; the light palette softens
-     it to a grey, since the same black reads as a smudge on a light ground. */
-  --color-shade: #0c0e14;
-  /* The ground of a spectrum image: as dark as the rendered image on the dark page; on the
-     light page the page ground, which the duotone sinks the image's silence into. */
+  --color-fg: #f9fafb;
+  --color-subtle: #d1d5dc;
+  --color-muted: #99a1af;
+  --color-faint: #99a1af;
+  --color-scrim: #030712;
+  --color-shade: #030712;
   --color-spectrum: #0c0e14;
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
@@ -43,10 +30,58 @@
   --ease-strong: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* The desktop app's light palette, set on <html> by the theme script in index.html before
+/* The light palette, set on <html> by the theme script in index.html before
    the first paint. Every utility resolves to var(--color-*), so it flips with these. */
 :root[data-theme="light"] {
   color-scheme: light;
+  --color-bg: #ffffff;
+  --color-bg2: #f9fafb;
+  --color-surface: #f9fafb;
+  --color-surface2: #f9fafb;
+  --color-line: #e5e7eb;
+  --color-highlight: #f3f4f6;
+  --color-field: #ffffff;
+  --color-edge: #99a1af;
+  --color-blue: #2959aa;
+  --color-cyan: #166775;
+  --color-purple: #5a4a78;
+  --color-green: #33635c;
+  --color-red: #8c4351;
+  --color-amber: #785526;
+  --color-fg: #101828;
+  --color-subtle: #364153;
+  --color-muted: #4a5565;
+  --color-faint: #6a7282;
+  --color-scrim: #d1d5dc;
+  --color-shade: #6a7282;
+  --color-spectrum: #ffffff;
+}
+
+.app-palette {
+  --color-bg: #1a1b26;
+  --color-bg2: #16161e;
+  --color-surface: #24283b;
+  --color-surface2: #1f2335;
+  --color-line: #2e344b;
+  --color-highlight: #292e42;
+  --color-field: #16161e;
+  --color-edge: #737aa2;
+  --color-blue: #7aa2f7;
+  --color-cyan: #7dcfff;
+  --color-purple: #bb9af7;
+  --color-green: #9ece6a;
+  --color-red: #f7768e;
+  --color-amber: #e0af68;
+  --color-fg: #c0caf5;
+  --color-subtle: #a9b1d6;
+  --color-muted: #9aa5ce;
+  --color-faint: #8990b7;
+  --color-scrim: #0c0e14;
+  --color-shade: #0c0e14;
+  --color-spectrum: #0c0e14;
+}
+
+:root[data-theme="light"] .app-palette {
   --color-bg: #e6e7ed;
   --color-bg2: #dee0e6;
   --color-surface: #f4f5f8;

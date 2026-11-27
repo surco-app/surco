@@ -19,7 +19,7 @@ export function Replayable({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
   const [run, setRun] = useState(0)
   return (
-    <div className="group relative">
+    <div className="app-palette group relative">
       <Fragment key={run}>{children}</Fragment>
       <button
         type="button"

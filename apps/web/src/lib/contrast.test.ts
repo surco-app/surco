@@ -6,6 +6,8 @@ const css = readFileSync(fileURLToPath(new URL('../index.css', import.meta.url))
 const app = readFileSync(fileURLToPath(new URL('../App.tsx', import.meta.url)), 'utf8')
 
 const lightCss = css.slice(css.indexOf('[data-theme="light"]'))
+const appCss = css.slice(css.indexOf('.app-palette {'))
+const appLightCss = css.slice(css.indexOf(':root[data-theme="light"] .app-palette {'))
 
 function token(name: string, from = css): string {
   const m = from.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`))
@@ -112,8 +114,10 @@ describe('light theme contrast (WCAG 1.4.3 AA)', () => {
 // inverted dark one: there a text field is brighter than the panel it sits on.
 describe('light theme follows the app it depicts', () => {
   it('draws scene fields brighter than the panel in light and darker in dark', () => {
-    expect(luminance(token('field', lightCss))).toBeGreaterThan(luminance(token('bg', lightCss)))
-    expect(luminance(token('field'))).toBeLessThan(luminance(token('bg')))
+    expect(luminance(token('field', appLightCss))).toBeGreaterThan(
+      luminance(token('bg', appLightCss)),
+    )
+    expect(luminance(token('field', appCss))).toBeLessThan(luminance(token('bg', appCss)))
   })
 
   it('keeps the deep bands as quiet on the light page as on the dark one', () => {

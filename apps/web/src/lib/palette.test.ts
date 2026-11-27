@@ -17,10 +17,10 @@ function hex(r: string, g: string, b: string): string {
   return `#${[r, g, b].map((v) => Number(v).toString(16).padStart(2, '0')).join('')}`
 }
 
-// Every colour on the site is Tokyo Night, like the desktop app: a colour of the palette as
-// it ships, or a blend of two of them (Vicent 25/09). The page ground is Tokyo Night Night,
-// the app's own palette. The raised surfaces keep Storm's two grounds: Storm is the same
-// family, and Night has nothing between its bg and bg_highlight for a card to sit on.
+// The scenes draw the desktop app, so every colour inside them is Tokyo Night, as the app
+// ships it: a colour of the palette, or a blend of two of them (Vicent 25/09). The page around
+// them follows Vicent's other sites, Cuts and Nada: white in light, near black in dark, and
+// their grays for text, lines and surfaces, with Surco's blue as the one accent.
 const TOKYO_NIGHT = {
   bg_dark1: '#0c0e14',
   bg_dark: '#16161e',
@@ -75,16 +75,53 @@ const SURCO_LIGHT = {
 
 const lightPalette = new Set<string>(Object.values(SURCO_LIGHT))
 
+const FAMILY = {
+  white: '#ffffff',
+  gray_50: '#f9fafb',
+  gray_100: '#f3f4f6',
+  gray_200: '#e5e7eb',
+  gray_300: '#d1d5dc',
+  gray_400: '#99a1af',
+  gray_500: '#6a7282',
+  gray_600: '#4a5565',
+  gray_700: '#364153',
+  gray_800: '#1e2939',
+  gray_900: '#101828',
+  gray_950: '#030712',
+  neutral_800: '#262626',
+  neutral_900: '#171717',
+  neutral_950: '#0a0a0a',
+} as const
+
+const familyPalette = new Set<string>(Object.values(FAMILY))
+
+const ACCENTS = [
+  'color-blue',
+  'color-cyan',
+  'color-purple',
+  'color-green',
+  'color-red',
+  'color-amber',
+]
+
 const REKORDBOX_CUE_COLOURS_BY_FILE: Record<string, string[]> = {
   'lib/scenes.ts': ['#e62828', '#28e214', '#305aff'],
 }
 
-describe('Tokyo Night palette', () => {
-  const theme = css.slice(css.indexOf('@theme'), css.indexOf('\n}', css.indexOf('@theme')))
+const block = (selector: string) => {
+  const start = css.indexOf(selector)
+  return css.slice(start, css.indexOf('\n}', start))
+}
+const tokens = (from: string) =>
+  new Map([...from.matchAll(/--(color-[\w-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]]))
+const pageDark = tokens(block('@theme'))
+const pageLight = tokens(block(':root[data-theme="light"] {'))
+const appDark = tokens(block('.app-palette {'))
+const appLight = tokens(block(':root[data-theme="light"] .app-palette {'))
 
-  for (const m of theme.matchAll(/--(color-[\w-]+):\s*(#[0-9a-fA-F]{6})/g)) {
-    const [, token, value] = m
-    it(`${token} is a Tokyo Night colour or a blend of two`, () => {
+describe('Tokyo Night palette', () => {
+  for (const [token, value] of appDark) {
+    it(`${token} in the scenes is a Tokyo Night colour or a blend of two`, () => {
       const mix = BLENDS[token]
       if (mix)
         expect(value.toLowerCase()).toBe(
@@ -94,6 +131,56 @@ describe('Tokyo Night palette', () => {
     })
   }
 
+  for (const token of pageDark.keys()) {
+    it(`gives the scenes their own ${token}, so the app they draw keeps its theme on the page`, () => {
+      expect(appDark.has(token)).toBe(true)
+      expect(appLight.has(token)).toBe(true)
+    })
+  }
+
+  for (const [token, value] of appLight) {
+    it(`${token} in the light scenes is a colour of Surco's light palette`, () => {
+      expect(lightPalette).toContain(value.toLowerCase())
+    })
+  }
+
+  it('wraps every scene in the app palette, through the replay frame they all sit in', () => {
+    const replay = readFileSync(
+      fileURLToPath(new URL('../components/scenes/Replay.tsx', import.meta.url)),
+      'utf8',
+    )
+    expect(replay).toMatch(/className="app-palette[^"]*">\s*<Fragment key=\{run\}>\{children\}/)
+  })
+})
+
+describe('family palette', () => {
+  for (const [theme, page] of [
+    ['dark', pageDark],
+    ['light', pageLight],
+  ] as const) {
+    for (const [token, value] of page) {
+      if (ACCENTS.includes(token) || token === 'color-spectrum') continue
+      it(`${token} on the ${theme} page is one of Cuts and Nada's grays`, () => {
+        expect(familyPalette).toContain(value.toLowerCase())
+      })
+    }
+  }
+
+  it('grounds the light page in white, like Cuts and Nada', () => {
+    expect(pageLight.get('color-bg')?.toLowerCase()).toBe(FAMILY.white)
+  })
+
+  it('grounds the dark page in the near black Cuts uses', () => {
+    expect(pageDark.get('color-bg')?.toLowerCase()).toBe(FAMILY.neutral_950)
+  })
+
+  it('keeps Surco blue as the accent in both themes', () => {
+    expect(pageDark.get('color-blue')?.toLowerCase()).toBe(TOKYO_NIGHT.blue)
+    expect(pageLight.get('color-blue')?.toLowerCase()).toBe(SURCO_LIGHT.accent)
+  })
+})
+
+describe('index.css', () => {
   // The rules below the tokens name colours too: the page ground, the text selection, the
   // headline glow. A literal there is a palette colour or a tint of one.
   it('paints nothing in index.css outside the palette', () => {
@@ -106,41 +193,37 @@ describe('Tokyo Night palette', () => {
       Object.values(BLENDS).map(([a, p, b]) => blend(TOKYO_NIGHT[a], TOKYO_NIGHT[b], p / 100)),
     )
     const foreign = [...hexes, ...rgbs].filter(
-      (c) => !palette.has(c) && !lightPalette.has(c) && !blends.has(c),
+      (c) => !palette.has(c) && !lightPalette.has(c) && !familyPalette.has(c) && !blends.has(c),
     )
     expect([...foreign, ...(code.match(/\b(white|black)\b/g) ?? [])]).toEqual([])
   })
 })
 
 // The same rule for the components and the HTML shell: an inline style, an SVG or a
-// Tailwind class paints a Tokyo Night colour. Tailwind's white, black and default palette
+// Tailwind class paints a palette colour. Tailwind's white, black and default palette
 // are in none of them. Shadows are exempt for now: whether the site keeps them at all is a
 // pending flat-design decision, so their colour waits for it.
 describe('light theme', () => {
   const start = css.indexOf('[data-theme="light"]')
-  const light = css.slice(start, css.indexOf('\n}', start))
-  const tokens = (block: string) =>
-    new Map([...block.matchAll(/--(color-[\w-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]]))
-  const dark = tokens(css.slice(css.indexOf('@theme'), css.indexOf('\n}', css.indexOf('@theme'))))
 
   it('is declared on the root, where the theme script sets it', () => {
     expect(start).toBeGreaterThan(-1)
   })
 
-  for (const token of dark.keys()) {
+  for (const token of pageDark.keys()) {
     it(`flips ${token}, or the dark ink would stay on the light page`, () => {
-      expect(tokens(light).has(token)).toBe(true)
+      expect(pageLight.has(token)).toBe(true)
     })
   }
 
-  for (const [token, value] of tokens(light)) {
-    it(`${token} is a colour of Surco's light palette`, () => {
-      expect(lightPalette).toContain(value.toLowerCase())
+  for (const [token, value] of pageLight) {
+    it(`${token} is a colour of the family's or Surco's light palette`, () => {
+      expect([...lightPalette, ...familyPalette]).toContain(value.toLowerCase())
     })
   }
 })
 
-describe('components paint only Tokyo Night colours', () => {
+describe('components paint only palette colours', () => {
   const root = fileURLToPath(new URL('..', import.meta.url))
   const sources = (readdirSync(root, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
@@ -159,6 +242,7 @@ describe('components paint only Tokyo Night colours', () => {
         (c) =>
           !palette.has(c.toLowerCase()) &&
           !lightPalette.has(c.toLowerCase()) &&
+          !familyPalette.has(c.toLowerCase()) &&
           !rekordbox.includes(c.toLowerCase()),
       )
       const tailwind = (
