@@ -67,8 +67,7 @@ export default function App() {
             <HeroStats />
           </Reveal>
           <Reveal eager delay={220}>
-            <div className="relative isolate mx-auto mt-8 max-w-5xl text-left">
-              <div className="hero-light pointer-events-none absolute top-0 left-1/2 -z-10 h-[36rem] w-[140%] -translate-x-1/2 -translate-y-1/2" />
+            <div data-testid="hero-visual" className="mx-auto mt-8 max-w-5xl text-left">
               <HeroApp video />
             </div>
           </Reveal>

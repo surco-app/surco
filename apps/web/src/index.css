@@ -243,16 +243,6 @@ button:not(:disabled) {
   animation: offerIn 0.2s var(--ease-strong);
 }
 
-/* Stage light behind the hero window: one soft blue pool at the centre, so the product is
-   what glows and the headline above stays on flat ground. */
-.hero-light {
-  background: radial-gradient(
-    ellipse 45% 50% at 50% 50%,
-    color-mix(in srgb, var(--color-blue) 22%, transparent),
-    transparent 70%
-  );
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
